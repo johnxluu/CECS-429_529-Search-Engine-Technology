@@ -149,6 +149,7 @@ public class DirectoryCorpus implements DocumentCorpus {
 	 */
 	public static DirectoryCorpus loadTextDirectory(Path absolutePath, String fileExtension) {
 		DirectoryCorpus corpus = new DirectoryCorpus(absolutePath);
+		if(!fileExtension.startsWith(".")) fileExtension = ".".concat(fileExtension);
 		corpus.registerFileDocumentFactory(fileExtension, TextFileDocument::loadTextFileDocument);
 		return corpus;
 	}
