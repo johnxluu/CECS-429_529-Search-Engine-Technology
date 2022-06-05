@@ -13,4 +13,5 @@ public class Posting {
 	public int getDocumentId() {
 		return mDocumentId;
 	}
+	
 }
