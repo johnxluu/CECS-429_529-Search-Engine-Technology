@@ -1,7 +1,5 @@
 package cecs429.documents;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -50,4 +48,5 @@ public class TextFileDocument implements FileDocument {
 	public static FileDocument loadTextFileDocument(Path absolutePath, int documentId) {
 		return new TextFileDocument(documentId, absolutePath);
 	}
+
 }
