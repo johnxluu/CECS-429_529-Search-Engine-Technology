@@ -1,10 +1,13 @@
 package cecs429.indexes;
 
+import java.util.List;
+
 /**
  * A Posting encapulates a document ID associated with a search query component.
  */
 public class Posting {
 	private int mDocumentId;
+	private List<Integer> positions;
 	
 	public Posting(int documentId) {
 		mDocumentId = documentId;
@@ -14,4 +17,8 @@ public class Posting {
 		return mDocumentId;
 	}
 	
+	public List<Integer> getPositions(int documentId){
+		return positions;
+	}
+
 }
