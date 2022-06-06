@@ -3,6 +3,9 @@ package cecs429.text;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tartarus.snowball.SnowballStemmer;
+import org.tartarus.snowball.ext.englishStemmer;
+
 public class CustomTokenProcessor implements TokenProcessor {
 
 	@Override
@@ -16,7 +19,6 @@ public class CustomTokenProcessor implements TokenProcessor {
 			list.add("");
 			return list;
 		}
-
 		StringBuilder str = new StringBuilder(token);
 		int i = 0;
 		boolean flag = true;
@@ -42,14 +44,32 @@ public class CustomTokenProcessor implements TokenProcessor {
 		if(str.toString().contains("-")) {
 			String[] hypStrings = str.toString().split("-");
 			for(String s:hypStrings) {
-				list.add(s);
+				
+				list.add(getStem(s));
 			}
-			list.add(String.join("", hypStrings));
+			
+			list.add(getStem(String.join("", hypStrings)));
 		} else {
-			list.add(str.toString());
+			list.add(getStem(str.toString()));
 		}
+		
+		// stemming 
+		
 		
 		return list;
 	}
+	
+	public static String getStem(String str) {
+		SnowballStemmer engStemmer=new englishStemmer();
+		engStemmer.setCurrent(str);
+		engStemmer.stem();
+//		if(str.equals("undermining")) {
+//			System.out.print("=============="+engStemmer.getCurrent());
+//		}
+		return engStemmer.getCurrent();
+
+	}
+	
+	
 
 }

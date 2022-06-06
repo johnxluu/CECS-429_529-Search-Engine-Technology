@@ -2,6 +2,7 @@ package edu.csulb;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -25,7 +26,7 @@ public class TermDocumentIndexer {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter Corpus Directory");
 		String corpusDirectory = sc.nextLine();
-
+//		corpusDirectory="F:\\CECS429_529\\corpus";
 		String fileType = getFileExtension(corpusDirectory);
 		// Create a DocumentCorpus to load documents from the project directory.
 		// F:\CECS429_529\corpus
@@ -50,15 +51,15 @@ public class TermDocumentIndexer {
 			// single-term queries.
 			System.out.println("Enter query to search");
 			String query = scanner.nextLine();
-
 			System.out.println("Query: (" + query + ") found in the following documents");
 //			for (String eachQuery : customTokenProcessor.processToken(query)) {
 			BooleanQueryParser booleanQueryParser = new BooleanQueryParser();
-			
-				for (Posting p : booleanQueryParser.parseQuery(query).getPostings(index)) {
+			List<Posting> postings=booleanQueryParser.parseQuery(query).getPostings(index);
+				for (Posting p : postings) {
 					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
 				}
 //			}
+			System.out.println(postings.size());
 			System.out.println("Want to search a new query? (Y/N)");
 			String newQuery = scanner.nextLine();
 			if (newQuery.equalsIgnoreCase("N")) {
@@ -88,6 +89,7 @@ public class TermDocumentIndexer {
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
 		EnglishTokenStream es;
 		System.out.println("Index Processing started for " + corpus.getCorpusSize() + " Documents");
+		int c=0;
 
 		for (Document d : corpus.getDocuments()) {
 			int position = 0;
@@ -98,7 +100,10 @@ public class TermDocumentIndexer {
 				es = new EnglishTokenStream(d.getContent());
 			}
 			for (String token : es.getTokens()) {
+				
+				
 				List<String> term = customTokenProcessor.processToken(token);
+			
 				if (term.size() <= 1)
 					index.addTerm(term.get(0), d.getId(), position);
 				else {

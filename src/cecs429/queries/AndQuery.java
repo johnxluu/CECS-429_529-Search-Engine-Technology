@@ -36,6 +36,8 @@ public class AndQuery implements QueryComponent {
 			result=andPostings(result,mComponents.get(i).getPostings(index));
 		}
 		
+
+		
 		return result;
 	}
 	
