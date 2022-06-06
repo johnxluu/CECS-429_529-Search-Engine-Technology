@@ -113,7 +113,7 @@ public class TermDocumentIndexer {
 		return fileName.split("\\.")[1];
 	}
 
-	private static Index indexCorpus(DocumentCorpus corpus, String fileExtension) {
+	public static Index indexCorpus(DocumentCorpus corpus, String fileExtension) {
 		CustomTokenProcessor customTokenProcessor = new CustomTokenProcessor();
 //		InvertedIndex index = new InvertedIndex();
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
@@ -131,7 +131,7 @@ public class TermDocumentIndexer {
 			for (String token : es.getTokens()) {
 
 				List<String> term = customTokenProcessor.processToken(token);
-
+				
 				if (term.size() <= 1)
 					index.addTerm(term.get(0), d.getId(), position);
 				else {
