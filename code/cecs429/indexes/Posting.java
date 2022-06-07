@@ -20,4 +20,5 @@ public class Posting {
 	public List<Integer> getPositions(int documentId){
 		return positions;
 	}
+
 }

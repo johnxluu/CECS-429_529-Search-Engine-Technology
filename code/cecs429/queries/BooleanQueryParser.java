@@ -147,27 +147,40 @@ public class BooleanQueryParser {
 		while (subquery.charAt(startIndex) == ' ') {
 			++startIndex;
 		}
-		
-		// Locate the next space to find the end of this literal.
-		int nextSpace = subquery.indexOf(' ', startIndex);
-		if (nextSpace < 0) {
-			// No more literals in this subquery.
-			lengthOut = subLength - startIndex;
+		if(subquery.charAt(startIndex) == '"') {
+			startIndex++;
+
+			int nextQuote = subquery.indexOf('"', startIndex);
+
+			if(nextQuote==-1) {
+				lengthOut = subquery.length() - startIndex;
+			}
+			else {
+				lengthOut = nextQuote - startIndex + 1;
+			}
+
+			return new Literal(
+					new StringBounds(startIndex, lengthOut),
+					new PhraseLiteral((subquery.substring(startIndex, lengthOut)))
+			);
+
 		}
 		else {
-			lengthOut = nextSpace - startIndex;
+			// Locate the next space to find the end of this literal.
+			int nextSpace = subquery.indexOf(' ', 	startIndex);
+			if (nextSpace < 0) {
+				// No more literals in this subquery.
+				lengthOut = subLength - startIndex;
+			}
+			else {
+				lengthOut = nextSpace - startIndex;
+			}
+			
+			// This is a term literal containing a single term.
+			return new Literal(
+			 new StringBounds(startIndex, lengthOut),
+			 new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut)));
 		}
 		
-		// This is a term literal containing a single term.
-		return new Literal(
-		 new StringBounds(startIndex, lengthOut),
-		 new TermLiteral(subquery.substring(startIndex, startIndex + lengthOut)));
-		
-		/*
-		TODO:
-		Instead of assuming that we only have single-term literals, modify this method so it will create a PhraseLiteral
-		object if the first non-space character you find is a double-quote ("). In this case, the literal is not ended
-		by the next space character, but by the next double-quote character.
-		 */
 	}
 }
