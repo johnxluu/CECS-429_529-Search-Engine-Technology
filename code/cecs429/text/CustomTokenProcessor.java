@@ -53,9 +53,6 @@ public class CustomTokenProcessor implements TokenProcessor {
 			list.add(getStem(str.toString()));
 		}
 		
-		// stemming 
-		
-		
 		return list;
 	}
 	

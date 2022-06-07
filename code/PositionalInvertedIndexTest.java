@@ -14,12 +14,18 @@ import edu.csulb.TermDocumentIndexer;
 public class PositionalInvertedIndexTest {
 	private PositionalInvertedIndex preBuiltIndex;
 	private CustomTokenProcessor customTokenProcessor;
+	private Index index;
+	private DocumentCorpus corpus;
 
 	@SuppressWarnings("static-access")
 	@Before
 	public void setUp() {
 		preBuiltIndex = new PositionalInvertedIndex();
 		customTokenProcessor = new CustomTokenProcessor();
+		
+		corpus = DirectoryCorpus.loadTextDirectory(Paths.get("junits/res").toAbsolutePath(), ".txt");
+		index = TermDocumentIndexer.indexCorpus(corpus, ".txt");
+		
 		preBuiltIndex.addTerm(customTokenProcessor.getStem("sign"),0, 0);
 		preBuiltIndex.addTerm(customTokenProcessor.getStem("in"),0, 1);
 		preBuiltIndex.addTerm(customTokenProcessor.getStem("to"),0, 2);
@@ -51,11 +57,14 @@ public class PositionalInvertedIndexTest {
 
 	@SuppressWarnings("static-access")
 	@Test
-	public void getPostingsTest() {
-		String termString = customTokenProcessor.getStem("television");
-		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get("junits/res").toAbsolutePath(), ".txt");
-		Index index = TermDocumentIndexer.indexCorpus(corpus, ".txt");
-		Assert.assertEquals(preBuiltIndex.getPostings(termString).get(0).getDocumentId(),
-				index.getPostings(termString).get(0).getDocumentId());
+	public void getMultiplePostingsTest() {
+		String termString1 = customTokenProcessor.getStem("television");
+		String termString2 = customTokenProcessor.getStem("to");
+		
+		Assert.assertEquals(preBuiltIndex.getPostings(termString1).get(0).getDocumentId(),
+				index.getPostings(termString1).get(0).getDocumentId());
+		Assert.assertEquals(preBuiltIndex.getPostings(termString2).get(0).getDocumentId(),
+				index.getPostings(termString2).get(0).getDocumentId());
 	}
+	
 }
