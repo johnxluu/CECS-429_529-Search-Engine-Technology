@@ -22,8 +22,6 @@ public class TermDocumentIndexer {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter Corpus Directory");
 		String corpusDirectory = sc.nextLine();
-//		corpusDirectory="F:\\CECS429_529\\corpus";
-
 		// Create a DocumentCorpus to load documents from the project directory.
 		// F:\CECS429_529\corpus
 		processIndexingAndSearch(corpusDirectory);
