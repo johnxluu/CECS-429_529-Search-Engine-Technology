@@ -2,9 +2,12 @@ package edu.csulb;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.IntStream;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
@@ -57,11 +60,15 @@ public class TermDocumentIndexer {
 //				for (String eachQuery : customTokenProcessor.processToken(query)) {
 				BooleanQueryParser booleanQueryParser = new BooleanQueryParser();
 				List<Posting> postings = booleanQueryParser.parseQuery(query).getPostings(index);
-				for (Posting p : postings) {
-					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+				if (CollectionUtils.isNotEmpty(postings)) {
+					for (Posting p : postings) {
+						System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+					}
+				} else {
+					postings = new ArrayList<>();
 				}
 //				}
-				System.out.println(postings.size());
+				System.out.println("For Query ( " +query+ " ) Output Size: "+postings.size());
 			}
 			System.out.println("Want to search a new query? (Y/N)");
 			String newQuery = scanner.nextLine();

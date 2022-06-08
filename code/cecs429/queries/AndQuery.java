@@ -15,7 +15,7 @@ import cecs429.indexes.Posting;
  */
 public class AndQuery implements QueryComponent {
 	private List<QueryComponent> mComponents;
-	
+		
 	public AndQuery(List<QueryComponent> components) {
 		mComponents = components;
 	}
@@ -31,8 +31,10 @@ public class AndQuery implements QueryComponent {
 		if(mComponents.size()==1) {
 			return mComponents.get(0).getPostings(index);
 		}
+		
 		result=andPostings(mComponents.get(0).getPostings(index),mComponents.get(1).getPostings(index));
-		for(int i=3;i<mComponents.size();i++) {
+		
+		for(int i=2;i<mComponents.size();i++) {
 			result=andPostings(result,mComponents.get(i).getPostings(index));
 		}
 		

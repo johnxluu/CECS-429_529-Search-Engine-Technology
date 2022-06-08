@@ -33,7 +33,7 @@ public class OrQuery implements QueryComponent {
 			return this.mComponents.get(1).getPostings(index);
 		}
 		result=orUnion(mComponents.get(0).getPostings(index),mComponents.get(1).getPostings(index));
-		for(int i=3;i<mComponents.size();i++) {
+		for(int i=2;i<mComponents.size();i++) {
 			result=orUnion(result, mComponents.get(i).getPostings(index));
 		}
 		
@@ -53,11 +53,11 @@ public class OrQuery implements QueryComponent {
 				union.add(l1.get(i++));
 			}
 			else {
-				union.add(l1.get(j++));
+				union.add(l2.get(j++));
 			}
 		}
 		while(i<l1.size())union.add(l1.get(i++));
-		while(j<l2.size())union.add(l1.get(j++));
+		while(j<l2.size())union.add(l2.get(j++));
 
 		return union;
 	}

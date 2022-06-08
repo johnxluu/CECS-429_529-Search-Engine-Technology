@@ -21,4 +21,9 @@ public class Posting {
 		return positions;
 	}
 
+	public void setPositions(List<Integer> positions) {
+		this.positions = positions;
+	}
+	
+
 }

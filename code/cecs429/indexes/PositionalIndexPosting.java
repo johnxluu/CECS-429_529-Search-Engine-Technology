@@ -12,10 +12,9 @@ public class PositionalIndexPosting {
 	private int mDocumentId;
 	private List<Integer> positions;
 	
-	public PositionalIndexPosting(int documentId,int position) {
+	public PositionalIndexPosting(int documentId,List<Integer> positionList) {
 		mDocumentId = documentId;
-		positions= new ArrayList<Integer>();
-		positions.add(position);
+		positions= positionList;
 	}
 	
 	public int getDocumentId() {

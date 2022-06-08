@@ -20,9 +20,10 @@ public class PositionalInvertedIndex implements Index{
 		if(map.containsKey(term)) {
 			List<PositionalIndexPosting> postingsList = map.get(term);
 			for(PositionalIndexPosting each: postingsList) {
-				posting.add(new Posting(each.getDocumentId()));
+				Posting tempPosting = new Posting(each.getDocumentId());
+				tempPosting.setPositions(each.getPositions());
+				posting.add(tempPosting);
 			}
-			
 			return posting;
 		}
 		return new ArrayList<>();
@@ -70,7 +71,9 @@ public class PositionalInvertedIndex implements Index{
 		List<PositionalIndexPosting> pos = getPositionIndexPostings(term);
 		if(!CollectionUtils.isEmpty(pos)) {
 			if(docId!=pos.get(pos.size()-1).getDocumentId()) {
-				pos.add(new PositionalIndexPosting(docId, position));
+				List<Integer> tempList = new ArrayList<>();
+				tempList.add(position);
+				pos.add(new PositionalIndexPosting(docId, tempList));
 				
 			} else {
 				pos.get(pos.size()-1).getPositions().add(position);
@@ -79,10 +82,12 @@ public class PositionalInvertedIndex implements Index{
 			map.put(term, pos);
 		} else {
 			List<PositionalIndexPosting> list = new ArrayList<>();
-			list.add(new PositionalIndexPosting(docId, position));
+			List<Integer> tempList = new ArrayList<>();
+			tempList.add(position);
+			list.add(new PositionalIndexPosting(docId, tempList));
 			map.put(term, list);
 		}
-		
 	}
+		
 
 }
