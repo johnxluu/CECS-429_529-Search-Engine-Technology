@@ -1,16 +1,10 @@
 package cecs429.queries;
 
-import static org.hamcrest.CoreMatchers.nullValue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
-import javax.print.attribute.IntegerSyntax;
 
 import cecs429.indexes.Index;
 import cecs429.indexes.Posting;
