@@ -1,15 +1,20 @@
 package edu.csulb;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.IntStream;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
 import cecs429.documents.JsonFileDocument;
+import cecs429.indexes.DiskIndexWriter;
 import cecs429.indexes.Index;
 import cecs429.indexes.PositionalInvertedIndex;
 import cecs429.indexes.Posting;
@@ -20,12 +25,60 @@ import cecs429.text.EnglishTokenStream;
 public class TermDocumentIndexer {
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
-		System.out.println("Enter Corpus Directory");
-		String corpusDirectory = sc.nextLine();
+		System.out.println("Select the options:");
+		System.out.println("1 for Milestone1");
+		System.out.println("2 for Milestone2");
+		String option = sc.nextLine();
+		if(option.equalsIgnoreCase("1")) milestone1();
+		else if(option.equalsIgnoreCase("2")) milestone2();
+		else System.out.println("Invalid entry. Exiting the application");
+		sc.close();
+	}
+
+	private static void milestone2() {
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Select the options:");
+		System.out.println("1. To build a disk index");
+		System.out.println("2. Query on the existing disk index");
+		String op = sc.nextLine();
+		if(op.equalsIgnoreCase("1")) {
+			String corpusDir = readFromCorpus(sc);
+			String fileType = getFileExtension(corpusDir);
+			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(corpusDir).toAbsolutePath(),
+					fileType);
+			System.out.println("Corpus Indexing started...");
+			Index index = indexCorpus(corpus, fileType);
+			DiskIndexWriter diw = new DiskIndexWriter();
+			System.out.println("Building disk index...");
+			
+			try {
+				long startTime = System.currentTimeMillis();
+				diw.writeIndex((PositionalInvertedIndex) index, corpusDir);
+				long endTime = System.currentTimeMillis();
+				long totalTime = endTime - startTime;
+				System.out.println("Time taken to build disk Index: " + totalTime + " milliseconds");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+		} else if(op.equalsIgnoreCase("2")) {
+			
+		} else {
+			System.out.println("Invalid entry. Exiting the application");
+		}
+	}
+
+	private static void milestone1() {
+		Scanner sc = new Scanner(System.in);
 		// Create a DocumentCorpus to load documents from the project directory.
 		// F:\CECS429_529\corpus
-		processIndexingAndSearch(corpusDirectory);
-		sc.close();
+		processIndexingAndSearch(readFromCorpus(sc));
+	}
+
+	private static String readFromCorpus(Scanner sc) {
+		System.out.println("Enter Corpus Directory");
+		String corpusDirectory = sc.nextLine();
+		return corpusDirectory;
 	}
 
 	private static void processIndexingAndSearch(String corpusDirectory) {
@@ -57,11 +110,15 @@ public class TermDocumentIndexer {
 //				for (String eachQuery : customTokenProcessor.processToken(query)) {
 				BooleanQueryParser booleanQueryParser = new BooleanQueryParser();
 				List<Posting> postings = booleanQueryParser.parseQuery(query).getPostings(index);
-				for (Posting p : postings) {
-					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+				if (CollectionUtils.isNotEmpty(postings)) {
+					for (Posting p : postings) {
+						System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+					}
+				} else {
+					postings = new ArrayList<>();
 				}
 //				}
-				System.out.println(postings.size());
+				System.out.println("For Query ( " +query+ " ) Output Size: "+postings.size());
 			}
 			System.out.println("Want to search a new query? (Y/N)");
 			String newQuery = scanner.nextLine();
