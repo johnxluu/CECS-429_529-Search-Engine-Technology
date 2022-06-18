@@ -11,10 +11,17 @@ import java.util.List;
 public class PositionalIndexPosting {
 	private int mDocumentId;
 	private List<Integer> positions;
+	private float wdt;
 	
 	public PositionalIndexPosting(int documentId,List<Integer> positionList) {
 		mDocumentId = documentId;
 		positions= positionList;
+	}
+	
+	public PositionalIndexPosting(int documentId,List<Integer> positionList,float wdt) {
+		mDocumentId = documentId;
+		positions= positionList;
+		this.setWdt(wdt);
 	}
 	
 	public int getDocumentId() {
@@ -27,5 +34,13 @@ public class PositionalIndexPosting {
 	
 	public void setPositions(List<Integer> positions) {
 		this.positions = positions;
+	}
+
+	public float getWdt() {
+		return wdt;
+	}
+
+	public void setWdt(float wdt) {
+		this.wdt = wdt;
 	}
 }
