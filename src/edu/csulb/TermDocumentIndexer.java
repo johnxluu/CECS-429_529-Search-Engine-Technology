@@ -72,6 +72,7 @@ public class TermDocumentIndexer {
 		Scanner sc = new Scanner(System.in);
 		// Create a DocumentCorpus to load documents from the project directory.
 		// F:\CECS429_529\corpus
+		// D:\CECS_429\corpus
 		processIndexingAndSearch(readFromCorpus(sc));
 	}
 
