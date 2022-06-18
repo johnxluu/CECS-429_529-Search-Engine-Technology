@@ -42,7 +42,7 @@ public class TermDocumentIndexer {
 		System.out.println("2. Query on the existing disk index");
 		String op = sc.nextLine();
 		if(op.equalsIgnoreCase("1")) {
-			String corpusDir = readFromCorpus(sc);
+			String corpusDir = readFromCorpus();
 			String fileType = getFileExtension(corpusDir);
 			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(corpusDir).toAbsolutePath(),
 					fileType);
@@ -69,13 +69,13 @@ public class TermDocumentIndexer {
 	}
 
 	private static void milestone1() {
-		Scanner sc = new Scanner(System.in);
-		// Create a DocumentCorpus to load documents from the project directory.
-		// F:\CECS429_529\corpus
-		processIndexingAndSearch(readFromCorpus(sc));
+		processIndexingAndSearch(readFromCorpus());
 	}
 
-	private static String readFromCorpus(Scanner sc) {
+	// Create a DocumentCorpus to load documents from the project directory.
+	// F:\CECS429_529\corpus
+	private static String readFromCorpus() {
+		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter Corpus Directory");
 		String corpusDirectory = sc.nextLine();
 		return corpusDirectory;
