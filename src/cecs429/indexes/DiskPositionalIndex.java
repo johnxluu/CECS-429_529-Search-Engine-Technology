@@ -68,27 +68,15 @@ public class DiskPositionalIndex implements Index {
 	}
 
 	private List<PositionalIndexPosting> readPostingsFromFile(RandomAccessFile postingStream, long postingsPosition) throws IOException {
-		List<PositionalIndexPosting> docList = new ArrayList<PositionalIndexPosting>();
+		List<PositionalIndexPosting>
+		docList = new ArrayList<PositionalIndexPosting>();
 
-		// seek to the position in the file where the postings start.
 		postingStream.seek(postingsPosition);
 
-		// read the 4 bytes for the document frequency
 		byte[] buffer = new byte[4];
 		postingStream.read(buffer, 0, buffer.length);
 
-		// use ByteBuffer to convert the 4 bytes into an int.
 		int documentFrequency = ByteBuffer.wrap(buffer).getInt();
-
-		// write the following code:
-		// read 4 bytes at a time from the file, until you have read as many
-		// postings as the document frequency promised.
-		//
-		// after each read, convert the bytes to an int posting. this value
-		// is the GAP since the last posting. decode the document ID from
-		// the gap and put it in the array.
-		//
-		// repeat until all postings are read.
 
 		int docId = 0;
 		int lastDocId = 0;
@@ -99,33 +87,19 @@ public class DiskPositionalIndex implements Index {
 
 		for (int docIdIndex = 0; docIdIndex < documentFrequency; docIdIndex++) {
 
-			// Reads the 4 bytes of the docId into docIdsBuffer
 			postingStream.read(docIdsBuffer, 0, docIdsBuffer.length);
 
-			// Convert the byte representation of the docId into the integer
-			// representation
-			// Current docId is the difference between the lastDocId and the
-			// currentDocId
-			// So add the lastDocId to the current number read from the
-			// postings file to get the currentDocId
 			docId = ByteBuffer.wrap(docIdsBuffer).getInt() + lastDocId;
-			
-			// Next 8 bytes is the document weight corresponding to the 
-			//postings.skipBytes(8);
 			postingStream.read(wdtBuffer, 0, wdtBuffer.length);
 			float wdt = ByteBuffer.wrap(wdtBuffer).getFloat();
 			
-			// Allocate a buffer for the 4 byte term frequency value
 			buffer = new byte[4];
 			
-			// Read the term frequency
 			postingStream.read(buffer, 0, buffer.length);
 			int termFreq = ByteBuffer.wrap(buffer).getInt();
 
-			// Create a positions list storing the position of each occurence of this term in this document
 			int[] positions = new int[termFreq];
 			
-			// Iterate through the postings file and get the positions of this term into the positions array
 			for (int positionIndex = 0; positionIndex < termFreq; positionIndex++) {
 				postingStream.read(positionsBuffer, 0, positionsBuffer.length);
 				positions[positionIndex] = ByteBuffer.wrap(positionsBuffer).getInt();
