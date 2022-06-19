@@ -88,6 +88,12 @@ public class PositionalInvertedIndex implements Index{
 			map.put(term, list);
 		}
 	}
+
+	@Override
+	public List<PositionalIndexPosting> getPostingsWithoutPositions(String term) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 		
 
 }

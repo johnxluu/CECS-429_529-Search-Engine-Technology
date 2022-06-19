@@ -19,7 +19,11 @@ public class DiskPositionalIndex implements Index {
 	private long[] vocabTable;
 
 	public DiskPositionalIndex(String path) throws IOException {
-		vocabListStream = new RandomAccessFile(new File(path + AppConstants.VOCAB_BIN), "r");
+		if(!path.endsWith(File.separator)) {
+			path+=File.separator;
+		}
+		path = path + AppConstants.INDEX;
+		vocabListStream = new RandomAccessFile(new File(path + AppConstants.VOCAB_LIST_BIN), "r");
 		postingStream = new RandomAccessFile(new File(path + AppConstants.POSTINGS_BIN),"r");
 		docWeightsStream = new RandomAccessFile(new File(path + AppConstants.DOC_WEIGHTS_BIN),"r");
 		vocabTable = readVocabTable(path + AppConstants.VOCAB_TABLE_BIN);
@@ -28,7 +32,7 @@ public class DiskPositionalIndex implements Index {
 	private long[] readVocabTable(String path) throws IOException {
 		int vocabTableIndex = 0;
 		long[] vocabTable;
-		byte[] temp = new byte[4];
+		byte[] temp = new byte[8];
 		
 		RandomAccessFile dis = new RandomAccessFile(new File(path),"r");
 
@@ -49,8 +53,20 @@ public class DiskPositionalIndex implements Index {
 
 	@Override
 	public List<Posting> getPostings(String term) {
-		// TODO Auto-generated method stub
-		return null;
+		List<Posting> posting = new ArrayList<>();
+
+		try {
+			List<PositionalIndexPosting> posIndexPostings = getPositionIndexPostings(term);
+			for(PositionalIndexPosting each: posIndexPostings) {
+				Posting tempPosting = new Posting(each.getDocumentId());
+				tempPosting.setPositions(each.getPositions());
+				posting.add(tempPosting);
+			}
+			return posting;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return posting;
 	}
 
 	@Override
@@ -147,6 +163,21 @@ public class DiskPositionalIndex implements Index {
 			}
 		}
 		return -1;
+	}
+
+	@Override
+	public List<PositionalIndexPosting> getPostingsWithoutPositions(String term) {
+		List<PositionalIndexPosting> positionalIndexPosting = new ArrayList<>();
+		try {
+			positionalIndexPosting = getPositionIndexPostings(term);
+			for(PositionalIndexPosting each:positionalIndexPosting){
+				each.setPositions(null);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return positionalIndexPosting;
 	}
 
 }

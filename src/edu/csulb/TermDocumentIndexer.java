@@ -15,60 +15,93 @@ import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
 import cecs429.documents.JsonFileDocument;
 import cecs429.indexes.DiskIndexWriter;
+import cecs429.indexes.DiskPositionalIndex;
 import cecs429.indexes.Index;
 import cecs429.indexes.PositionalInvertedIndex;
 import cecs429.indexes.Posting;
 import cecs429.queries.BooleanQueryParser;
+import cecs429.queries.QueryService;
 import cecs429.text.CustomTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 
 public class TermDocumentIndexer {
+	private DiskPositionalIndex diskPositionalIndex;
+
 	public static void main(String[] args) {
+		TermDocumentIndexer tdi = new TermDocumentIndexer();
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Select the options:");
 		System.out.println("1 for Milestone1");
 		System.out.println("2 for Milestone2");
 		String option = sc.nextLine();
-		if(option.equalsIgnoreCase("1")) milestone1();
-		else if(option.equalsIgnoreCase("2")) milestone2();
-		else System.out.println("Invalid entry. Exiting the application");
+		if (option.equalsIgnoreCase("1"))
+			tdi.milestone1();
+		else if (option.equalsIgnoreCase("2"))
+			tdi.milestone2();
+		else
+			System.out.println("Invalid entry. Exiting the application");
 		sc.close();
 	}
 
-	private static void milestone2() {
+	private void milestone2() {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Select the options:");
 		System.out.println("1. To build a disk index");
 		System.out.println("2. Query on the existing disk index");
 		String op = sc.nextLine();
 		if(op.equalsIgnoreCase("1")) {
+			buildDiskIndex();
+		} else if(op.equalsIgnoreCase("2")) {
+			
+			System.out.println("Select the options:");
+			System.out.println("1. Boolean Query");
+			System.out.println("2. Ranked Query");
+			
+			String op2 = sc.nextLine();
 			String corpusDir = readFromCorpus();
 			String fileType = getFileExtension(corpusDir);
 			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(corpusDir).toAbsolutePath(),
 					fileType);
-			System.out.println("Corpus Indexing started...");
-			Index index = indexCorpus(corpus, fileType);
-			DiskIndexWriter diw = new DiskIndexWriter();
-			System.out.println("Building disk index...");
-			
 			try {
-				long startTime = System.currentTimeMillis();
-				diw.writeIndex((PositionalInvertedIndex) index, corpusDir);
-				long endTime = System.currentTimeMillis();
-				long totalTime = endTime - startTime;
-				System.out.println("Time taken to build disk Index: " + totalTime + " milliseconds");
+				diskPositionalIndex = new DiskPositionalIndex(corpusDir);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-		} else if(op.equalsIgnoreCase("2")) {
+			if(op2.equalsIgnoreCase("1")) {
+				System.out.println("Enter a query");
+				String querysc = sc.nextLine();
+				List<Posting> postings = QueryService.processBooleanQueries(querysc, diskPositionalIndex);
+				printQueryResults(corpus, querysc, postings);
+			} else if(op2.equalsIgnoreCase("2")){
+
+			}
 			
 		} else {
 			System.out.println("Invalid entry. Exiting the application");
 		}
 	}
 
-	private static void milestone1() {
+	private void buildDiskIndex() {
+		String corpusDir = readFromCorpus();
+		String fileType = getFileExtension(corpusDir);
+		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(corpusDir).toAbsolutePath(), fileType);
+		System.out.println("Corpus Indexing started...");
+		Index index = indexCorpus(corpus, fileType);
+		DiskIndexWriter diw = new DiskIndexWriter();
+		System.out.println("Building disk index...");
+		try {
+			long startTime = System.currentTimeMillis();
+			diw.writeVocabList((PositionalInvertedIndex) index, corpusDir);
+			diw.writeIndex((PositionalInvertedIndex) index, corpusDir);
+			long endTime = System.currentTimeMillis();
+			long totalTime = endTime - startTime;
+			System.out.println("Time taken to build disk Index: " + totalTime + " milliseconds");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void milestone1() {
 		processIndexingAndSearch(readFromCorpus());
 	}
 
@@ -96,7 +129,7 @@ public class TermDocumentIndexer {
 
 	private static void searchQuery(DocumentCorpus corpus, Index index) {
 		Boolean shouldEnd = true;
-		CustomTokenProcessor customTokenProcessor = new CustomTokenProcessor();
+//		CustomTokenProcessor customTokenProcessor = new CustomTokenProcessor();
 		Scanner scanner = new Scanner(System.in);
 		while (shouldEnd) {
 			// We aren't ready to use a full query parser; for now, we'll only support
@@ -110,15 +143,7 @@ public class TermDocumentIndexer {
 //				for (String eachQuery : customTokenProcessor.processToken(query)) {
 				BooleanQueryParser booleanQueryParser = new BooleanQueryParser();
 				List<Posting> postings = booleanQueryParser.parseQuery(query).getPostings(index);
-				if (CollectionUtils.isNotEmpty(postings)) {
-					for (Posting p : postings) {
-						System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
-					}
-				} else {
-					postings = new ArrayList<>();
-				}
-//				}
-				System.out.println("For Query ( " +query+ " ) Output Size: "+postings.size());
+				printQueryResults(corpus, query, postings);
 			}
 			System.out.println("Want to search a new query? (Y/N)");
 			String newQuery = scanner.nextLine();
@@ -128,21 +153,34 @@ public class TermDocumentIndexer {
 		}
 	}
 
+	private static void printQueryResults(DocumentCorpus corpus, String query, List<Posting> postings) {
+		if (CollectionUtils.isNotEmpty(postings)) {
+			for (Posting p : postings) {
+				System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+			}
+		} else {
+			postings = new ArrayList<>();
+		}
+//				}
+		System.out.println("For Query ( " + query + " ) Output Size: " + postings.size());
+	}
+
+	@SuppressWarnings({ "static-access" })
 	private static void processSpecialQuery(String query, Index index) {
 		String[] splQuery = query.split(" ");
 		if (splQuery.length == 1 && splQuery[0].equalsIgnoreCase(":q")) {
-				System.exit(0);
+			System.exit(0);
 		} else if (splQuery.length == 1 && splQuery[0].equalsIgnoreCase(":vocab")) {
-				List<String> vocabList = index.getVocabulary();
-				int size = 1000;
-				if (vocabList.size() < 1000)
-					size = vocabList.size();
-				IntStream.range(0, size).mapToObj(i -> vocabList.get(i)).forEach(System.out::println);
+			List<String> vocabList = index.getVocabulary();
+			int size = 1000;
+			if (vocabList.size() < 1000)
+				size = vocabList.size();
+			IntStream.range(0, size).mapToObj(i -> vocabList.get(i)).forEach(System.out::println);
 		} else if (splQuery.length == 2 && splQuery[0].equalsIgnoreCase(":stem")) {
-				CustomTokenProcessor tk = new CustomTokenProcessor();
-				System.out.println("Stemmed term: "+tk.getStem(splQuery[1]));
-		} else if(splQuery.length == 2 && splQuery[0].equalsIgnoreCase(":index")) {
-				processIndexingAndSearch(splQuery[1]);
+			CustomTokenProcessor tk = new CustomTokenProcessor();
+			System.out.println("Stemmed term: " + tk.getStem(splQuery[1]));
+		} else if (splQuery.length == 2 && splQuery[0].equalsIgnoreCase(":index")) {
+			processIndexingAndSearch(splQuery[1]);
 		} else {
 			System.out.println("Invalid Special Query");
 		}
@@ -186,7 +224,7 @@ public class TermDocumentIndexer {
 			for (String token : es.getTokens()) {
 
 				List<String> term = customTokenProcessor.processToken(token);
-				
+
 				if (term.size() <= 1)
 					index.addTerm(term.get(0), d.getId(), position);
 				else {
