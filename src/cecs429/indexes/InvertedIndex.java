@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+@SuppressWarnings("rawtypes")
 public class InvertedIndex implements Index {
 
 	Map<String,List<Posting>> map = new HashMap<>();
@@ -40,5 +41,11 @@ public class InvertedIndex implements Index {
 			list.add(new Posting(docId));
 		}
 		map.put(term, list);
+	}
+
+	@Override
+	public List<PositionalIndexPosting> getPostingsWithoutPositions(String term) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

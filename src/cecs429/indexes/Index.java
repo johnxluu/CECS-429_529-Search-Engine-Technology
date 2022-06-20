@@ -16,4 +16,9 @@ public interface Index {
 	 * A (sorted) list of all terms in the index vocabulary.
 	 */
 	List<String> getVocabulary();
+	/**
+	 * Retrieves a list of Postings of documents (without positions) that contain the given term.
+	 */
+	List<PositionalIndexPosting> getPostingsWithoutPositions(String term);
+	
 }
