@@ -2,11 +2,14 @@ package edu.csulb;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -14,6 +17,7 @@ import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
 import cecs429.documents.JsonFileDocument;
+import cecs429.documents.RankedDocument;
 import cecs429.indexes.DiskIndexWriter;
 import cecs429.indexes.DiskPositionalIndex;
 import cecs429.indexes.Index;
@@ -23,6 +27,7 @@ import cecs429.queries.BooleanQueryParser;
 import cecs429.queries.QueryService;
 import cecs429.text.CustomTokenProcessor;
 import cecs429.text.EnglishTokenStream;
+import cecs429.utils.AppUtils;
 
 public class TermDocumentIndexer {
 	private DiskPositionalIndex diskPositionalIndex;
@@ -66,6 +71,8 @@ public class TermDocumentIndexer {
 				diskPositionalIndex = new DiskPositionalIndex(corpusDir);
 			} catch (IOException e) {
 				e.printStackTrace();
+				
+				
 			}
 			if(op2.equalsIgnoreCase("1")) {
 				System.out.println("Enter a query");
@@ -73,12 +80,36 @@ public class TermDocumentIndexer {
 				List<Posting> postings = QueryService.processBooleanQueries(querysc, diskPositionalIndex);
 				printQueryResults(corpus, querysc, postings);
 			} else if(op2.equalsIgnoreCase("2")){
-
+				System.out.println("Enter a query");
+				String querysc = sc.nextLine();
+				List<RankedDocument> rankedPostings = new ArrayList<>();
+				try {
+					rankedPostings = QueryService.processRankedQueries(querysc, diskPositionalIndex, AppUtils.getCorpusSize(corpusDir));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				for(RankedDocument rd: rankedPostings) {
+					System.out.println("Document " + rd.getDocumentId());
+					System.out.println("Accumulator: "+rd.getAccumulator());
+				}
+				System.out.println("For Query ( " + querysc + " ) Output Size: " + rankedPostings.size());
 			}
 			
 		} else {
 			System.out.println("Invalid entry. Exiting the application");
 		}
+	}
+
+	private long getCorpusSize(String corpusDir) {
+		long count = 0;
+		try {
+			Stream<Path> files = Files.list(Paths.get(corpusDir));
+		    count = files.count();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return count;
 	}
 
 	private void buildDiskIndex() {
@@ -156,7 +187,7 @@ public class TermDocumentIndexer {
 	private static void printQueryResults(DocumentCorpus corpus, String query, List<Posting> postings) {
 		if (CollectionUtils.isNotEmpty(postings)) {
 			for (Posting p : postings) {
-				System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+				System.out.println("Document " + p.getDocumentId());
 			}
 		} else {
 			postings = new ArrayList<>();

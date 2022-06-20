@@ -31,8 +31,7 @@ public class DiskPositionalIndex implements Index {
 
 	private long[] readVocabTable(String path) throws IOException {
 		int vocabTableIndex = 0;
-		long[] vocabTable;
-		byte[] temp = new byte[8];
+		byte[] temp = new byte[4];
 		
 		RandomAccessFile dis = new RandomAccessFile(new File(path),"r");
 
@@ -71,12 +70,16 @@ public class DiskPositionalIndex implements Index {
 
 	@Override
 	public List<String> getVocabulary() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public List<PositionalIndexPosting> getPositionIndexPostings(String term) throws IOException {
 		long postingsPosition = searchPosting(term);
+//		List<String> list = Arrays.asList("access", "and", "bedroom", "in", "is", "mani", "movi", "off", "on", "photo",
+//				"sign", "televis", "the", "to", "turn", "video", "watch", "your");
+//		for(String s:list) {
+//			System.out.println(s+"    "+searchPosting(s));
+//		}
 		if (postingsPosition >= 0) {
 			return readPostingsFromFile(postingStream, postingsPosition);
 		}
@@ -86,7 +89,7 @@ public class DiskPositionalIndex implements Index {
 	private List<PositionalIndexPosting> readPostingsFromFile(RandomAccessFile postingStream, long postingsPosition) throws IOException {
 		List<PositionalIndexPosting>
 		docList = new ArrayList<PositionalIndexPosting>();
-
+		System.out.println(postingsPosition);
 		postingStream.seek(postingsPosition);
 
 		byte[] buffer = new byte[4];
@@ -96,29 +99,34 @@ public class DiskPositionalIndex implements Index {
 
 		int docId = 0;
 		int lastDocId = 0;
-
+		double wdt = 0;
+		
 		byte docIdsBuffer[] = new byte[4];
 		byte positionsBuffer[] = new byte[4];
 		byte wdtBuffer[] = new byte[8];
+		byte positionBuffer[] = new byte[4];
 
 		for (int docIdIndex = 0; docIdIndex < documentFrequency; docIdIndex++) {
-
-			postingStream.read(docIdsBuffer, 0, docIdsBuffer.length);
-
-			docId = ByteBuffer.wrap(docIdsBuffer).getInt() + lastDocId;
+			//dwt - 8 byte
 			postingStream.read(wdtBuffer, 0, wdtBuffer.length);
-			float wdt = ByteBuffer.wrap(wdtBuffer).getFloat();
+			wdt = ByteBuffer.wrap(wdtBuffer).getDouble();
+
+			//docId
+			postingStream.read(docIdsBuffer, 0, docIdsBuffer.length);
+			docId = ByteBuffer.wrap(docIdsBuffer).getInt() + lastDocId;
 			
-			buffer = new byte[4];
-			
-			postingStream.read(buffer, 0, buffer.length);
-			int termFreq = ByteBuffer.wrap(buffer).getInt();
+			//PositionBuffer
+			positionBuffer = new byte[4];
+			postingStream.read(positionBuffer, 0, positionBuffer.length);
+			int termFreq = ByteBuffer.wrap(positionBuffer).getInt();
 
 			int[] positions = new int[termFreq];
 			
+			int lastPostingId=0;
 			for (int positionIndex = 0; positionIndex < termFreq; positionIndex++) {
 				postingStream.read(positionsBuffer, 0, positionsBuffer.length);
-				positions[positionIndex] = ByteBuffer.wrap(positionsBuffer).getInt();
+				positions[positionIndex] = ByteBuffer.wrap(positionsBuffer).getInt()+lastPostingId;
+				lastDocId= positions[positionIndex];
 			}
 
 			lastDocId = docId;
@@ -136,15 +144,15 @@ public class DiskPositionalIndex implements Index {
 		while (i <= j) {
 			try {
 				int mid = (i + j) / 2;
-				long vListPosition = vocabTable[mid * 2];
+				long vocabListPos = vocabTable[mid * 2];
 				int n;
 				if (mid == vocabTable.length / 2 - 1) {
 					n = (int) (vocabListStream.length() - vocabTable[mid * 2]);
 				} else {
-					n = (int) (vocabTable[(mid + 1) * 2] - vListPosition);
+					n = (int) (vocabTable[(mid + 1) * 2] - vocabListPos);
 				}
 
-				vocabListStream.seek(vListPosition);
+				vocabListStream.seek(vocabListPos);
 
 				byte[] buffer = new byte[n];
 				vocabListStream.read(buffer, 0, n);
@@ -178,6 +186,18 @@ public class DiskPositionalIndex implements Index {
 		}
 		
 		return positionalIndexPosting;
+	}
+	
+	public double getDocWeight(int docId) {
+		try {
+			docWeightsStream.seek(docId * 8);
+			byte[] byteBuffer = new byte[8];
+			docWeightsStream.read(byteBuffer, 0, byteBuffer.length);
+			return ByteBuffer.wrap(byteBuffer).getDouble();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 }

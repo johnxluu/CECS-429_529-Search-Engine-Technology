@@ -9,9 +9,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import cecs429.utils.AppConstants;
+import cecs429.utils.AppUtils;
 
 public class DiskIndexWriter {
 	private long[] vocabPositions;
@@ -20,39 +20,49 @@ public class DiskIndexWriter {
 		List<String> vocabList = index.getVocabulary();
 		Map<Integer, Double> docWeightsMap = new HashMap<Integer, Double>();
 		int i=0;
-		int corpusSize = getCorpusSize(path);
+		int corpusSize = AppUtils.getCorpusSize(path);
 		
 		//postings.bin
-		FileOutputStream ostream = new FileOutputStream(createFileInADirectory(path +AppConstants.INDEX, AppConstants.POSTINGS_BIN));
-		DataOutputStream dataOutputStream = new DataOutputStream(ostream);
+//		FileOutputStream ostream = new FileOutputStream(createFileInADirectory(path +AppConstants.INDEX, AppConstants.POSTINGS_BIN));
+		FileOutputStream postingsFos = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.POSTINGS_BIN));
 		
 		//vocabtable.bin
-		OutputStream ostream1 = new FileOutputStream(createFileInADirectory(path +AppConstants.INDEX, AppConstants.VOCAB_TABLE_BIN));
-		DataOutputStream vocabTable = new DataOutputStream(ostream1);
+//		OutputStream ostream1 = new FileOutputStream(createFileInADirectory(path +AppConstants.INDEX, AppConstants.VOCAB_TABLE_BIN));
+		FileOutputStream vocabTable = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.VOCAB_TABLE_BIN));
 		byte[] vocabByteSize = ByteBuffer.allocate(4).putInt(vocabList.size()).array();
 		vocabTable.write(vocabByteSize, 0, vocabByteSize.length);
 		
 		//docWeights.bin
-		OutputStream ostream2 = new FileOutputStream(createFileInADirectory(path +AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
-		DataOutputStream docWeightsStream = new DataOutputStream(ostream2);
+//		OutputStream ostream2 = new FileOutputStream(createFileInADirectory(path +AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
+//		DataOutputStream docWeightsStream = new DataOutputStream(ostream2);
+		FileOutputStream docWeightsStream = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
 		
+		//Wdt File wdt.bin
+		FileOutputStream WdtStream = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
 		
 		for(String vocab:vocabList) {
 			List<PositionalIndexPosting> postings = index.getPositionIndexPostings(vocab);
-			long prevDocId=0;
+			int prevDocId=0;
+			
+			//VocabTable
 			byte[] vocabPosBytes = ByteBuffer.allocate(8).putLong(vocabPositions[i]).array();
-			byte[] postingsPosBytes = ByteBuffer.allocate(8).putLong(ostream.getChannel().position()).array();
-
 			vocabTable.write(vocabPosBytes, 0, vocabPosBytes.length);
+			byte[] postingsPosBytes = ByteBuffer.allocate(8).putLong(postingsFos.getChannel().position()).array();
 			vocabTable.write(postingsPosBytes, 0, postingsPosBytes.length);
 			
 			//Dft
-			dataOutputStream.writeLong(postings.size());
+			byte[] docFreqBytes = ByteBuffer.allocate(4).putInt(postings.size()).array();
+			
+			postingsFos.write(docFreqBytes,0,docFreqBytes.length);
 			for(PositionalIndexPosting post:postings) {
 				
 				int tf = post.getPositions().size();
 				double wdt = 1 + Math.log(tf);			
 				
+				
+				//Write Dwt as 8 byte to postings
+				byte[] dwtBytes = ByteBuffer.allocate(8).putDouble(postings.size()).array();
+				postingsFos.write(dwtBytes,0,dwtBytes.length);
 				
 				//Preparing map of document Id with squares of wdt
 				if (docWeightsMap.containsKey(post.getDocumentId())) {						
@@ -61,17 +71,22 @@ public class DiskIndexWriter {
 					docWeightsMap.put(post.getDocumentId(), Math.pow(wdt, 2));
 				}
 				
-				long prevPostingId=0;
-				prevDocId = post.getDocumentId()-prevDocId;
+				int prevPostingId=0;
 				//DocID
-				dataOutputStream.writeLong(prevDocId);
+				byte[] docIdBytes = ByteBuffer.allocate(4).putInt(post.getDocumentId()-prevDocId).array();
+				postingsFos.write(docIdBytes,0,docIdBytes.length);
+				prevDocId = post.getDocumentId();
+				
 				List<Integer> positionsList = post.getPositions();
 				//Tfd
-				dataOutputStream.writeLong(positionsList.size());
+				byte[] tfBytes = ByteBuffer.allocate(4).putInt(positionsList.size()).array();
+				postingsFos.write(tfBytes,0,tfBytes.length);
+				
 				for(Integer position:positionsList) {
 					//Position
-					prevPostingId = position-prevPostingId;
-					dataOutputStream.writeLong(prevPostingId);
+					byte[] positionBytes = ByteBuffer.allocate(4).putInt(position-prevPostingId).array();
+					postingsFos.write(positionBytes,0,positionBytes.length);
+					prevPostingId = position;
 				}
 			}
 			i++;
@@ -89,30 +104,20 @@ public class DiskIndexWriter {
 //		}
 		for (int j = 0; j < corpusSize; j++) {
 			double value;
-			
+//			byte[] wdtBuffer = ByteBuffer.allocate(8).putDouble(value).array();
 			if(docWeightsMap.get(j)!=null) {
+//				WdtStream.write(wdtBuffer, 0, wdtBuffer.length);
 				value = Math.sqrt(docWeightsMap.get(j));
 			} else {
+//				wdtBuffer.write(wdtBuffer, 0, wdtBuffer.length);
 				value = 0;
 			}
 			 byte[] docWeightsMapBuffer = ByteBuffer.allocate(8).putDouble(value).array();
 			 docWeightsStream.write(docWeightsMapBuffer, 0, docWeightsMapBuffer.length);
 		}
 		docWeightsStream.close();
-		dataOutputStream.close();
-		ostream.close();
-	}
+		postingsFos.close();
 
-	private int getCorpusSize(String path) {
-		File folder = new File(path);
-		File[] listOfFiles = folder.listFiles();
-		int size = 0;
-		for (int i = 0; i < listOfFiles.length; i++) {
-		  if (listOfFiles[i].isFile()) {
-		    size++;
-		  }
-		}
-		return size;
 	}
 
 	private File createFileInADirectory(String directoryName,String fileName) throws IOException {
