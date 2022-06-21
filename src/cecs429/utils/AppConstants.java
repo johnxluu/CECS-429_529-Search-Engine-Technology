@@ -12,4 +12,6 @@ public class AppConstants {
 	public static final String DOC_WEIGHTS_BIN = "/docWeights.bin";
 	public static final String POSTINGS_BIN = "/postings.bin";
 	public static final String VOCAB_BIN = "/vocab.bin";
+	public static final String VOCAB_LIST_BIN = "/vocablist.bin";
+	public static final String INDEX = "/index";
 }
