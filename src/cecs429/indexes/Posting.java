@@ -8,6 +8,7 @@ import java.util.List;
 public class Posting {
 	private int mDocumentId;
 	private List<Integer> positions;
+	double wdt;
 	
 	public Posting(int documentId) {
 		mDocumentId = documentId;
@@ -23,6 +24,14 @@ public class Posting {
 
 	public void setPositions(List<Integer> positions) {
 		this.positions = positions;
+	}
+
+	public double getWdt() {
+		return wdt;
+	}
+
+	public void setWdt(double wdt) {
+		this.wdt = wdt;
 	}
 	
 

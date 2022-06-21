@@ -101,15 +101,13 @@ public class TermDocumentIndexer {
 		}
 	}
 
-	private long getCorpusSize(String corpusDir) {
-		long count = 0;
-		try {
-			Stream<Path> files = Files.list(Paths.get(corpusDir));
-		    count = files.count();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return count;
+	private static void milestone1() {
+		Scanner sc = new Scanner(System.in);
+		// Create a DocumentCorpus to load documents from the project directory.
+		// F:\CECS429_529\corpus
+		// D:\CECS_429\corpus
+		processIndexingAndSearch(readFromCorpus(sc));
+
 	}
 
 	private void buildDiskIndex() {
