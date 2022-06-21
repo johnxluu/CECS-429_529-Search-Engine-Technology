@@ -90,8 +90,9 @@ public class TermDocumentIndexer {
 					e.printStackTrace();
 				}
 				for(RankedDocument rd: rankedPostings) {
-					System.out.println("Document " + rd.getDocumentId());
+					System.out.println("Doc ID: " + rd.getDocumentId());
 					System.out.println("Accumulator: "+rd.getAccumulator());
+					
 				}
 				System.out.println("For Query ( " + querysc + " ) Output Size: " + rankedPostings.size());
 			}
@@ -99,15 +100,6 @@ public class TermDocumentIndexer {
 		} else {
 			System.out.println("Invalid entry. Exiting the application");
 		}
-	}
-
-	private static void milestone1() {
-		Scanner sc = new Scanner(System.in);
-		// Create a DocumentCorpus to load documents from the project directory.
-		// F:\CECS429_529\corpus
-		// D:\CECS_429\corpus
-		processIndexingAndSearch(readFromCorpus(sc));
-
 	}
 
 	private void buildDiskIndex() {

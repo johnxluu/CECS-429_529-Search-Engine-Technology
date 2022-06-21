@@ -89,7 +89,7 @@ public class DiskPositionalIndex implements Index {
 	private List<PositionalIndexPosting> readPostingsFromFile(RandomAccessFile postingStream, long postingsPosition) throws IOException {
 		List<PositionalIndexPosting>
 		docList = new ArrayList<PositionalIndexPosting>();
-		System.out.println(postingsPosition);
+//		System.out.println(postingsPosition);
 		postingStream.seek(postingsPosition);
 
 		byte[] buffer = new byte[4];
@@ -99,7 +99,6 @@ public class DiskPositionalIndex implements Index {
 
 		int docId = 0;
 		int lastDocId = 0;
-		double wdt = 0;
 		
 		byte docIdsBuffer[] = new byte[4];
 		byte positionsBuffer[] = new byte[4];
@@ -109,7 +108,7 @@ public class DiskPositionalIndex implements Index {
 		for (int docIdIndex = 0; docIdIndex < documentFrequency; docIdIndex++) {
 			//dwt - 8 byte
 			postingStream.read(wdtBuffer, 0, wdtBuffer.length);
-			wdt = ByteBuffer.wrap(wdtBuffer).getDouble();
+			double wdt = ByteBuffer.wrap(wdtBuffer).getDouble();
 
 			//docId
 			postingStream.read(docIdsBuffer, 0, docIdsBuffer.length);
