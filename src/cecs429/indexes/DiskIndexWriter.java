@@ -38,7 +38,7 @@ public class DiskIndexWriter {
 		FileOutputStream docWeightsStream = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
 		
 		//Wdt File wdt.bin
-		FileOutputStream WdtStream = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
+//		FileOutputStream WdtStream = new FileOutputStream(new File( path+AppConstants.INDEX, AppConstants.DOC_WEIGHTS_BIN));
 		
 		for(String vocab:vocabList) {
 			List<PositionalIndexPosting> postings = index.getPositionIndexPostings(vocab);
@@ -59,9 +59,8 @@ public class DiskIndexWriter {
 				int tf = post.getPositions().size();
 				double wdt = 1 + Math.log(tf);			
 				
-				
-				//Write Dwt as 8 byte to postings
-				byte[] dwtBytes = ByteBuffer.allocate(8).putDouble(postings.size()).array();
+				//Write Wdt as 8 byte to postings
+				byte[] dwtBytes = ByteBuffer.allocate(8).putDouble(wdt).array();
 				postingsFos.write(dwtBytes,0,dwtBytes.length);
 				
 				//Preparing map of document Id with squares of wdt
