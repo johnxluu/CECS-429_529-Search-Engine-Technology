@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import cecs429.utils.AppConstants;
 
 public class DiskPositionalIndex implements Index {
@@ -56,10 +58,12 @@ public class DiskPositionalIndex implements Index {
 
 		try {
 			List<PositionalIndexPosting> posIndexPostings = getPositionIndexPostings(term);
-			for(PositionalIndexPosting each: posIndexPostings) {
-				Posting tempPosting = new Posting(each.getDocumentId());
-				tempPosting.setPositions(each.getPositions());
-				posting.add(tempPosting);
+			if(CollectionUtils.isNotEmpty(posIndexPostings)) {
+				for(PositionalIndexPosting each: posIndexPostings) {
+					Posting tempPosting = new Posting(each.getDocumentId());
+					tempPosting.setPositions(each.getPositions());
+					posting.add(tempPosting);
+				}
 			}
 			return posting;
 		} catch (IOException e) {
@@ -83,7 +87,7 @@ public class DiskPositionalIndex implements Index {
 		if (postingsPosition >= 0) {
 			return readPostingsFromFile(postingStream, postingsPosition);
 		}
-		return null;
+		return new ArrayList<>();
 	}
 
 	private List<PositionalIndexPosting> readPostingsFromFile(RandomAccessFile postingStream, long postingsPosition) throws IOException {
@@ -125,7 +129,7 @@ public class DiskPositionalIndex implements Index {
 			for (int positionIndex = 0; positionIndex < termFreq; positionIndex++) {
 				postingStream.read(positionsBuffer, 0, positionsBuffer.length);
 				positions[positionIndex] = ByteBuffer.wrap(positionsBuffer).getInt()+lastPostingId;
-				lastDocId= positions[positionIndex];
+				lastPostingId= positions[positionIndex];
 			}
 
 			lastDocId = docId;
