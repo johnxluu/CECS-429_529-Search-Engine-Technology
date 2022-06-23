@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import cecs429.algorithms.DiskIndexingAlgorithm;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
@@ -31,6 +32,7 @@ import cecs429.utils.AppUtils;
 
 public class TermDocumentIndexer {
 	private DiskPositionalIndex diskPositionalIndex;
+	private DiskIndexingAlgorithm diskIndexingAlgorithm;
 
 	public static void main(String[] args) {
 		TermDocumentIndexer tdi = new TermDocumentIndexer();
@@ -71,8 +73,6 @@ public class TermDocumentIndexer {
 				diskPositionalIndex = new DiskPositionalIndex(corpusDir);
 			} catch (IOException e) {
 				e.printStackTrace();
-				
-				
 			}
 			if(op2.equalsIgnoreCase("1")) {
 				System.out.println("Enter a query");
@@ -86,13 +86,19 @@ public class TermDocumentIndexer {
 				try {
 					rankedPostings = QueryService.processRankedQueries(querysc, diskPositionalIndex, AppUtils.getCorpusSize(corpusDir));
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				for(RankedDocument rd: rankedPostings) {
-					System.out.println("Doc ID: " + rd.getDocumentId());
-					System.out.println("Accumulator: "+rd.getAccumulator());
-					
+				for (RankedDocument rd : rankedPostings) {
+//					if (fileType.equalsIgnoreCase("json") || fileType.equalsIgnoreCase(".json")) {
+//						
+//						System.out.println("(Doc ID: " + rd.getDocumentId() + " Title: "
+//								+ new JsonFileDocument(rd.getDocumentId(),
+//										corpus.getDocument(rd.getDocumentId()).getFilePath()).getTitle()
+//								+ " Accumulator: " + rd.getAccumulator() + " )");
+//					} else {
+						System.out.println("(Doc ID: " + rd.getDocumentId() + " "
+								+ "Accumulator: " + rd.getAccumulator()+" )");
+//					}
 				}
 				System.out.println("For Query ( " + querysc + " ) Output Size: " + rankedPostings.size());
 			}
@@ -252,10 +258,18 @@ public class TermDocumentIndexer {
 					for (String eachTerm : term)
 						index.addTerm(eachTerm, d.getId(), position);
 				}
+//				if(isIndexFull(index)) {
+//					DiskIndexingAlgorithm.processSpimi(fileExtension, index);
+//				}
 				position++;
 			}
 		}
 		System.out.println("Index Processing Ended");
 		return index;
 	}
+
+//	private static boolean isIndexFull(PositionalInvertedIndex index) {
+//		if(index)
+//		return false;
+//	}
 }

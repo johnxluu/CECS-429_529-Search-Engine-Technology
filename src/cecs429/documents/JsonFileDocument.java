@@ -34,10 +34,8 @@ public class JsonFileDocument implements JsonDocument{
 
 	@Override
 	public Reader getContent() {
-		GsonBuilder builder = new GsonBuilder();
-		Gson gson = builder.create();
 	    try {
-			Map<?, ?> map = gson.fromJson(Files.newBufferedReader(Paths.get(jsonFilePath.toString())), Map.class);
+	    	Map<?, ?> map = readFilesToGson();
 			for (Map.Entry<?, ?> entry : map.entrySet()) {
 				if(((String)entry.getKey()).equalsIgnoreCase("Title")) {
 					jsonTitle=(String)entry.getValue();
@@ -56,8 +54,27 @@ public class JsonFileDocument implements JsonDocument{
 		
 	}
 
+	private Map<?, ?> readFilesToGson() throws IOException {
+		GsonBuilder builder = new GsonBuilder();
+		Gson gson = builder.create();
+		Map<?, ?> map = gson.fromJson(Files.newBufferedReader(Paths.get(jsonFilePath.toString())), Map.class);
+		return map;
+	}
+
 	@Override
 	public String getTitle() {
+		try {
+			Map<?, ?> map = readFilesToGson();
+			for (Map.Entry<?, ?> entry : map.entrySet()) {
+				if(((String)entry.getKey()).equalsIgnoreCase("Title")) {
+					jsonTitle=(String)entry.getValue();
+					break;
+				}
+		    }
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return jsonTitle;
 	}
 

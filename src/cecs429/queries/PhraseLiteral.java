@@ -2,9 +2,12 @@ package cecs429.queries;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import cecs429.indexes.Index;
 import cecs429.indexes.Posting;
@@ -43,9 +46,9 @@ public class PhraseLiteral implements QueryComponent {
 		for(String term:mTerms) {
 			tokenizedList.addAll(customTokenProcessor.processToken(term));
 		}
-		if (mTerms.size()==0) {
+		if (mTerms.size()==0) 
 			return finalPostings;
-		}
+		
 		if(mTerms.size()==1) {
 			return index.getPostings(tokenizedList.get(0));
 		}
@@ -56,14 +59,15 @@ public class PhraseLiteral implements QueryComponent {
 
 		}
 		return finalPostings;
-		// TODO: program this method. Retrieve the postings for the individual terms in the phrase,
-		// and positional merge them together.
 	}
 	
 	public List<Posting> merge(List<Posting> l1,List<Posting> l2,boolean flag){
-		List<Posting> result=new ArrayList<Posting>();
+//		List<Posting> result=new ArrayList<Posting>();
+		Set<Posting> resultSet = new HashSet<>();
 		Set<Integer> tempSet=new HashSet<>();
 		int i=0,j=0;
+		l1.sort(Comparator.comparing(Posting::getDocumentId));
+		l2.sort(Comparator.comparing(Posting::getDocumentId));
 		while(i<l1.size() && j<l2.size()) {
 			Posting p1=l1.get(i);
 			Posting p2=l2.get(j);
@@ -76,11 +80,11 @@ public class PhraseLiteral implements QueryComponent {
 					if(positions2.get(n)-positions1.get(m)==1) {
 						if(flag) {
 							this.set.add(positions2.get(n));
-							result.add(p2);
+							resultSet.add(p2);
 						}
 						else {
 							if(this.set.contains(positions1.get(m))){
-								result.add(p2);
+								resultSet.add(p2);
 								tempSet.add(positions2.get(n));
 							}
 						}
@@ -106,7 +110,7 @@ public class PhraseLiteral implements QueryComponent {
 		}
 		
 		if(!flag)this.set=tempSet;
-		return result;
+		return resultSet.stream().collect(Collectors.toList());
 	}
 	
 	@Override

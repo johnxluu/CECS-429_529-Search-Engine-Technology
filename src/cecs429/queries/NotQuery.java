@@ -24,8 +24,6 @@ public class NotQuery implements QueryComponent {
 	public List<Posting> getPostings(Index index) {
 		List<Posting> result = new ArrayList<>();
 		
-		// TODO: program the merge for an NotQuery, by gathering the postings of the composed QueryComponents and
-		// unioning the resulting postings.
 		if(this.mComponents.size()==0) {
 			return result;
 		}
