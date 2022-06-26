@@ -203,4 +203,7 @@ public class DiskPositionalIndex implements Index {
 		return 0;
 	}
 
+	public int getVocabSize() {
+		return vocabTable.length;
+	}
 }
