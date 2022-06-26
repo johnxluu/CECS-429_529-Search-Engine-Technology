@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 
 import cecs429.algorithms.DiskIndexingAlgorithm;
+import cecs429.classification.DocumentClassification;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
 import cecs429.documents.DocumentCorpus;
@@ -33,21 +34,36 @@ import cecs429.utils.AppUtils;
 public class TermDocumentIndexer {
 	private DiskPositionalIndex diskPositionalIndex;
 	private DiskIndexingAlgorithm diskIndexingAlgorithm;
-
+	private DocumentClassification documentClassification;
+	
 	public static void main(String[] args) {
 		TermDocumentIndexer tdi = new TermDocumentIndexer();
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Select the options:");
 		System.out.println("1 for Milestone1");
 		System.out.println("2 for Milestone2");
+		System.out.println("3 for Milestone3");
 		String option = sc.nextLine();
 		if (option.equalsIgnoreCase("1"))
 			tdi.milestone1();
 		else if (option.equalsIgnoreCase("2"))
 			tdi.milestone2();
+		else if (option.equalsIgnoreCase("3"))
+			tdi.milestone3();
 		else
 			System.out.println("Invalid entry. Exiting the application");
 		sc.close();
+	}
+
+	private void milestone3() {
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Select the options:");
+		System.out.println("1. Bayesian");
+		String op = sc.nextLine();
+		if(op.equalsIgnoreCase("1")) {
+			documentClassification = new DocumentClassification();
+			documentClassification.startDiskIndexing();
+		}
 	}
 
 	private void milestone2() {
@@ -230,6 +246,7 @@ public class TermDocumentIndexer {
 				break;
 			}
 		}
+		if(fileName.isEmpty()) return fileName;
 		return fileName.split("\\.")[1];
 	}
 
