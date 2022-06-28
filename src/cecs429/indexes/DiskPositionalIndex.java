@@ -17,6 +17,7 @@ public class DiskPositionalIndex implements Index {
 	private RandomAccessFile postingStream;
 	private RandomAccessFile vocabListStream;
 	private RandomAccessFile docWeightsStream;
+	private List<String> vocabList;
 	
 	private long[] vocabTable;
 

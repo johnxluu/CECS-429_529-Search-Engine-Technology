@@ -19,6 +19,11 @@ public class AppUtils {
 		}
 		return size;
 	}
+	
+	public static double log2(double x) {
+		double result=Math.log(x) / Math.log(2);
+        return result ;
+    }
 
 }
 

@@ -131,7 +131,7 @@ public class DiskIndexWriter {
 		return f;
 	}
 	
-	public void writeVocabList(PositionalInvertedIndex index, String path) throws IOException {
+	public List<String> writeVocabList(PositionalInvertedIndex index, String path) throws IOException {
 		String directoryName = path +AppConstants.INDEX;
 		int i=0,pos=0;
 		
@@ -151,6 +151,7 @@ public class DiskIndexWriter {
 		}
 		vocabOutputStream.close();
 		ostream.close();
+		return vocabList;
 	}
 
 //	public void writeVocabTable(PositionalInvertedIndex index, String path) {
