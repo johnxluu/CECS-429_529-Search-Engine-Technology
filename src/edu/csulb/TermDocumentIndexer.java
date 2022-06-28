@@ -36,6 +36,7 @@ public class TermDocumentIndexer {
 	private DiskIndexingAlgorithm diskIndexingAlgorithm;
 	private DocumentClassification documentClassification;
 	
+	
 	public static void main(String[] args) {
 		TermDocumentIndexer tdi = new TermDocumentIndexer();
 		Scanner sc = new Scanner(System.in);
@@ -59,10 +60,17 @@ public class TermDocumentIndexer {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Select the options:");
 		System.out.println("1. Bayesian");
+		System.out.println("2. Rocchio");
 		String op = sc.nextLine();
 		if(op.equalsIgnoreCase("1")) {
 			documentClassification = new DocumentClassification();
-			documentClassification.startDiskIndexing();
+			try {
+				documentClassification.startDiskIndexing();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else if(op.equalsIgnoreCase("2")) {
+			
 		}
 	}
 
