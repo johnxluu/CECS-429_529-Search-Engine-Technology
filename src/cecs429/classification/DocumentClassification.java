@@ -213,7 +213,7 @@ public class DocumentClassification {
 //		calcJayIct(miPQ);
 //		calcMadIct(miPQ);
 
-		Set<MutualInformation> tempTopMiList = new HashSet<>();
+		List<MutualInformation> tempTopMiList = new ArrayList<>();
 		// Top 10 discriminating terms
 		int i = 0;
 		while (i < 50 && !miPQ.isEmpty()) {
@@ -225,11 +225,12 @@ public class DocumentClassification {
 				i--;
 			i++;
 		}
-		System.out.println("=== Top 10 terms by I(T, C) ===");
+		System.out.println("==============================================");
+		System.out.println("=== Top 10 terms by I(C, T) ===");
 		for (i = 0; i < 10; i++) {
-			System.out.println(discVocabList.get(i));
+			System.out.println("Term: "+tempTopMiList.get(i).getTerm()+" ==> Score: "+tempTopMiList.get(i).getIct());
 		}
-
+		System.out.println("==============================================");
 		return discVocabList;
 	}
 
