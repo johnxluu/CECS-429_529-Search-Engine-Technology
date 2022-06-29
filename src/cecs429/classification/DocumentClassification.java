@@ -58,6 +58,7 @@ public class DocumentClassification {
 	List<Integer> madDocIds;
 	List<String> madDocNames;
 
+
 	public void startDiskIndexing(int option) throws IOException {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter Corpus Directory");
@@ -105,6 +106,7 @@ public class DocumentClassification {
 			System.out.println("Enter K value");
 			int k = sc.nextInt();
 			knn(k);
+
 		}
 
 	}
@@ -478,5 +480,6 @@ public class DocumentClassification {
 		}
 		return vectorsList;
 	}
+
 
 }

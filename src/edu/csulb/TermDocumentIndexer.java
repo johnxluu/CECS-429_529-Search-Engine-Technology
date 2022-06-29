@@ -58,6 +58,7 @@ public class TermDocumentIndexer {
 		System.out.println("3. kNN");
 		String op = sc.nextLine();
 		documentClassification = new DocumentClassification();
+
 		int option = 0;
 		if (op.equalsIgnoreCase("1")) {
 			option = 1;
@@ -70,6 +71,7 @@ public class TermDocumentIndexer {
 		try {
 			documentClassification.startDiskIndexing(option);
 		} catch (Exception e) {
+
 			System.out.println(e.getMessage());
 		}
 	}
