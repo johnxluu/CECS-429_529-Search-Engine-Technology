@@ -62,7 +62,6 @@ public class TermDocumentIndexer {
 		int option = 0;
 		if (op.equalsIgnoreCase("1")) {
 			option = 1;
-
 		} else if (op.equalsIgnoreCase("2")) {
 			option = 2;
 		} else if (op.equalsIgnoreCase("3")) {

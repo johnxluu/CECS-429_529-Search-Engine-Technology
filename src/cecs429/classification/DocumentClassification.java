@@ -106,7 +106,6 @@ public class DocumentClassification {
 			System.out.println("Enter K value");
 			int k = sc.nextInt();
 			knn(k);
-
 		}
 
 	}
