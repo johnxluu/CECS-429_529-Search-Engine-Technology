@@ -51,6 +51,13 @@ public class DocumentClassification {
 	ArrayList<String> sortedCompList;
 	List<Integer> disputedDocIds;
 	List<String> disputedDocNames;
+	List<Integer> hamDocIds;
+	List<String> hamDocNames;
+	List<Integer> jayDocIds;
+	List<String> jayDocNames;
+	List<Integer> madDocIds;
+	List<String> madDocNames;
+
 
 	public void startDiskIndexing(int option) throws IOException {
 		Scanner sc = new Scanner(System.in);
@@ -95,6 +102,10 @@ public class DocumentClassification {
 			bayesianClassifer();
 		} else if (option == 2) {
 			rocchioClassification();
+		} else if (option == 3) {
+			System.out.println("Enter K value");
+			int k = sc.nextInt();
+			knn(k);
 		}
 
 	}
@@ -107,14 +118,7 @@ public class DocumentClassification {
 	private Set<String> writeDiskIndexes(String path) {
 		Set<String> localVocabSet = new HashSet<>();
 		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(path).toAbsolutePath(), ".txt");
-		if (path.contains(AppConstants.DISPUTED_PATH)) {
-			disputedDocIds = new ArrayList<>();
-			disputedDocNames = new ArrayList<>();
-			for (Document d : corpus.getDocuments()) {
-				disputedDocIds.add(d.getId());
-				disputedDocNames.add(d.getTitle());
-			}
-		}
+		prepareDocIdsAndNames(path, corpus);
 		System.out.println("Corpus Indexing started...");
 		Index index = TermDocumentIndexer.indexCorpus(corpus, ".txt");
 		DiskIndexWriter diw = new DiskIndexWriter();
@@ -127,6 +131,38 @@ public class DocumentClassification {
 			e.printStackTrace();
 		}
 		return localVocabSet;
+	}
+
+	private void prepareDocIdsAndNames(String path, DocumentCorpus corpus) {
+		if (path.contains(AppConstants.DISPUTED_PATH)) {
+			disputedDocIds = new ArrayList<>();
+			disputedDocNames = new ArrayList<>();
+			for (Document d : corpus.getDocuments()) {
+				disputedDocIds.add(d.getId());
+				disputedDocNames.add(d.getTitle());
+			}
+		} else if (path.contains(AppConstants.HAMILTON_PATH)) {
+			hamDocIds = new ArrayList<>();
+			hamDocNames = new ArrayList<>();
+			for (Document d : corpus.getDocuments()) {
+				hamDocIds.add(d.getId());
+				hamDocNames.add(d.getTitle());
+			}
+		} else if (path.contains(AppConstants.JAY_PATH)) {
+			jayDocIds = new ArrayList<>();
+			jayDocNames = new ArrayList<>();
+			for (Document d : corpus.getDocuments()) {
+				jayDocIds.add(d.getId());
+				jayDocNames.add(d.getTitle());
+			}
+		} else if (path.contains(AppConstants.MADISON_PATH)) {
+			madDocIds = new ArrayList<>();
+			madDocNames = new ArrayList<>();
+			for (Document d : corpus.getDocuments()) {
+				madDocIds.add(d.getId());
+				madDocNames.add(d.getTitle());
+			}
+		}
 	}
 
 	public void bayesianClassifer() throws IOException {
@@ -373,5 +409,76 @@ public class DocumentClassification {
 		return vector;
 
 	}
+
+	public void knn(int k) throws IOException {
+		ArrayList<ArrayList<Double>> allVectors = new ArrayList<ArrayList<Double>>();
+		ArrayList<String> fileNames = new ArrayList<String>();
+
+		allVectors.addAll(addVector(hamDocIds, hamDiskPositionalIndex, hamVocabList, fileNames, hamDocNames));
+
+		allVectors.addAll(addVector(jayDocIds, jayDiskPositionalIndex, jayVocabList, fileNames, jayDocNames));
+		allVectors.addAll(addVector(madDocIds, madDiskPositionalIndex, madVocabList, fileNames, madDocNames));
+
+		ArrayList<ArrayList<Double>> allDisputedList = addVector(disputedDocIds, disputeDiskPositionalIndex,
+				disputedVocabList, fileNames, disputedDocNames);
+		int index = 0;
+		for (ArrayList<Double> disputedVector : allDisputedList) {
+			ArrayList<Double> distances = new ArrayList<Double>();
+			ArrayList<String> fileNamesCopy = new ArrayList<>(fileNames);
+			for (ArrayList<Double> vector : allVectors) {
+				distances.add(getEucledianDistance(disputedVector, vector));
+			}
+
+			// sort the distance and file names based on distances
+			for (int i = 0; i < distances.size(); i++) {
+				for (int j = i + 1; j < distances.size(); j++) {
+					if (distances.get(i) > distances.get(j)) {
+						double temp = distances.get(i);
+						distances.set(i, distances.get(j));
+						distances.set(j, temp);
+						// swap names
+						String tempFileName = fileNamesCopy.get(i);
+						fileNamesCopy.set(i, fileNamesCopy.get(j));
+						fileNamesCopy.set(j, tempFileName);
+					}
+				}
+			}
+			System.out.println("==================");
+			System.out.println(disputedDocNames.get(index));
+			for (int i = 0; i < k; i++) {
+				System.out.println(distances.get(i) + "    " + fileNamesCopy.get(i));
+			}
+			index++;
+		}
+
+	}
+
+	public ArrayList<ArrayList<Double>> addVector(List<Integer> docIDs, DiskPositionalIndex dpi, Set<String> termSet,
+			ArrayList<String> fileNames, List<String> classNameList) throws IOException {
+
+		ArrayList<ArrayList<Double>> vectorsList = new ArrayList<ArrayList<Double>>();
+
+		for (Integer docID : docIDs) {
+			ArrayList<Double> vector = new ArrayList<Double>(Collections.nCopies(sortedCompList.size(), 0.0));
+			for (String term : termSet) {
+				double LD = 0;
+				double sumOFWDT = 0;
+				for (PositionalIndexPosting dp : dpi.getPositionIndexPostings(term)) {
+					if (dp.getDocumentId() == docID) {
+						LD = dpi.getDocWeight(docID);
+						sumOFWDT += dp.getWdt() / LD;
+						vector.set(sortedCompList.indexOf(term), sumOFWDT);
+						break;
+					}
+				}
+
+			}
+			vectorsList.add(vector);
+			fileNames.add(classNameList.get(docID));
+
+		}
+		return vectorsList;
+	}
+
 
 }

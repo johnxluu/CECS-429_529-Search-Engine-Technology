@@ -2,18 +2,14 @@ package edu.csulb;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-//import cecs429.algorithms.DiskIndexingAlgorithm;
 import cecs429.classification.DocumentClassification;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
@@ -33,10 +29,8 @@ import cecs429.utils.AppUtils;
 
 public class TermDocumentIndexer {
 	private DiskPositionalIndex diskPositionalIndex;
-//	private DiskIndexingAlgorithm diskIndexingAlgorithm;
 	private DocumentClassification documentClassification;
-	
-	
+
 	public static void main(String[] args) {
 		TermDocumentIndexer tdi = new TermDocumentIndexer();
 		Scanner sc = new Scanner(System.in);
@@ -61,19 +55,22 @@ public class TermDocumentIndexer {
 		System.out.println("Select the options:");
 		System.out.println("1. Bayesian");
 		System.out.println("2. Rocchio");
+		System.out.println("3. kNN");
 		String op = sc.nextLine();
 		documentClassification = new DocumentClassification();
-		int option=0;
-		if(op.equalsIgnoreCase("1")) {
-			option=1;
-			
-		} else if(op.equalsIgnoreCase("2")) {
-			option=2;
+
+		int option = 0;
+		if (op.equalsIgnoreCase("1")) {
+			option = 1;
+		} else if (op.equalsIgnoreCase("2")) {
+			option = 2;
+		} else if (op.equalsIgnoreCase("3")) {
+			option = 3;
 		}
 		try {
 			documentClassification.startDiskIndexing(option);
-		}
-		catch(Exception e) {
+		} catch (Exception e) {
+
 			System.out.println(e.getMessage());
 		}
 	}
@@ -84,35 +81,35 @@ public class TermDocumentIndexer {
 		System.out.println("1. To build a disk index");
 		System.out.println("2. Query on the existing disk index");
 		String op = sc.nextLine();
-		if(op.equalsIgnoreCase("1")) {
+		if (op.equalsIgnoreCase("1")) {
 			buildDiskIndex();
-		} else if(op.equalsIgnoreCase("2")) {
-			
+		} else if (op.equalsIgnoreCase("2")) {
+
 			System.out.println("Select the options:");
 			System.out.println("1. Boolean Query");
 			System.out.println("2. Ranked Query");
-			
+
 			String op2 = sc.nextLine();
 			String corpusDir = readFromCorpus();
 			String fileType = getFileExtension(corpusDir);
-			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(corpusDir).toAbsolutePath(),
-					fileType);
+			DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(corpusDir).toAbsolutePath(), fileType);
 			try {
 				diskPositionalIndex = new DiskPositionalIndex(corpusDir);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(op2.equalsIgnoreCase("1")) {
+			if (op2.equalsIgnoreCase("1")) {
 				System.out.println("Enter a query");
 				String querysc = sc.nextLine();
 				List<Posting> postings = QueryService.processBooleanQueries(querysc, diskPositionalIndex);
 				printQueryResults(corpus, querysc, postings);
-			} else if(op2.equalsIgnoreCase("2")){
+			} else if (op2.equalsIgnoreCase("2")) {
 				System.out.println("Enter a query");
 				String querysc = sc.nextLine();
 				List<RankedDocument> rankedPostings = new ArrayList<>();
 				try {
-					rankedPostings = QueryService.processRankedQueries(querysc, diskPositionalIndex, AppUtils.getCorpusSize(corpusDir));
+					rankedPostings = QueryService.processRankedQueries(querysc, diskPositionalIndex,
+							AppUtils.getCorpusSize(corpusDir));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -124,13 +121,13 @@ public class TermDocumentIndexer {
 //										corpus.getDocument(rd.getDocumentId()).getFilePath()).getTitle()
 //								+ " Accumulator: " + rd.getAccumulator() + " )");
 //					} else {
-						System.out.println("(Doc ID: " + rd.getDocumentId() + " "
-								+ "Accumulator: " + rd.getAccumulator()+" )");
+					System.out.println(
+							"(Doc ID: " + rd.getDocumentId() + " " + "Accumulator: " + rd.getAccumulator() + " )");
 //					}
 				}
 				System.out.println("For Query ( " + querysc + " ) Output Size: " + rankedPostings.size());
 			}
-			
+
 		} else {
 			System.out.println("Invalid entry. Exiting the application");
 		}
@@ -258,7 +255,8 @@ public class TermDocumentIndexer {
 				break;
 			}
 		}
-		if(fileName.isEmpty()) return fileName;
+		if (fileName.isEmpty())
+			return fileName;
 		return fileName.split("\\.")[1];
 	}
 
