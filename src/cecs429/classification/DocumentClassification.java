@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,13 +41,18 @@ public class DocumentClassification {
 	private double hamCount = 0;
 	private double madCount = 0;
 	private double totalCount = 0;
+	private double disputedCount = 0;
 	private String basePath;
 	Set<String> compVocabList;
 	Set<String> jayVocabList;
 	Set<String> hamVocabList;
 	Set<String> madVocabList;
+	Set<String> disputedVocabList;
+	ArrayList<String> sortedCompList;
+	List<Integer> disputedDocIds;
+	List<String> disputedDocNames;
 
-	public void startDiskIndexing() throws IOException {
+	public void startDiskIndexing(int option) throws IOException {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter Corpus Directory");
 		basePath = sc.nextLine();
@@ -57,6 +63,7 @@ public class DocumentClassification {
 		jayVocabList = writeDiskIndexes(basePath + AppConstants.JAY_PATH);
 		hamVocabList = writeDiskIndexes(basePath + AppConstants.HAMILTON_PATH);
 		madVocabList = writeDiskIndexes(basePath + AppConstants.MADISON_PATH);
+		disputedVocabList = writeDiskIndexes(basePath + AppConstants.DISPUTED_PATH);
 		writeDiskIndexes(basePath + AppConstants.DISPUTED_PATH);
 
 		// Complete list of all files from Jay, Hamilton, Madison
@@ -69,6 +76,7 @@ public class DocumentClassification {
 		jayCount = getDocCount(basePath + AppConstants.JAY_PATH);
 		hamCount = getDocCount(basePath + AppConstants.HAMILTON_PATH);
 		madCount = getDocCount(basePath + AppConstants.MADISON_PATH);
+		disputedCount = getDocCount(basePath + AppConstants.DISPUTED_PATH);
 		totalCount = jayCount + hamCount + madCount;
 
 		try {
@@ -77,11 +85,18 @@ public class DocumentClassification {
 			madDiskPositionalIndex = new DiskPositionalIndex(basePath + AppConstants.MADISON_PATH);
 			disputeDiskPositionalIndex = new DiskPositionalIndex(basePath + AppConstants.DISPUTED_PATH);
 			comprehensiveDiskPositionalIndex = new DiskPositionalIndex(basePath + AppConstants.COMPREHENSIVE_PATH);
+			sortedCompList = new ArrayList<String>(compVocabList);
+			sortedCompList.addAll(new ArrayList<String>(disputedVocabList));
+			Collections.sort(sortedCompList);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		if (option == 1) {
+			bayesianClassifer();
+		} else if (option == 2) {
+			rocchioClassification();
+		}
 
-		bayesianClassifer();
 	}
 
 	private int getDocCount(String path) {
@@ -92,6 +107,14 @@ public class DocumentClassification {
 	private Set<String> writeDiskIndexes(String path) {
 		Set<String> localVocabSet = new HashSet<>();
 		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(path).toAbsolutePath(), ".txt");
+		if (path.contains(AppConstants.DISPUTED_PATH)) {
+			disputedDocIds = new ArrayList<>();
+			disputedDocNames = new ArrayList<>();
+			for (Document d : corpus.getDocuments()) {
+				disputedDocIds.add(d.getId());
+				disputedDocNames.add(d.getTitle());
+			}
+		}
 		System.out.println("Corpus Indexing started...");
 		Index index = TermDocumentIndexer.indexCorpus(corpus, ".txt");
 		DiskIndexWriter diw = new DiskIndexWriter();
@@ -116,48 +139,49 @@ public class DocumentClassification {
 		prepareTermProbabilityMap(discVocabList, jayDiskPositionalIndex, probMap, 2);
 		prepareTermProbabilityMap(discVocabList, madDiskPositionalIndex, probMap, 3);
 
-
 		DocumentCorpus corpus = DirectoryCorpus
 				.loadTextDirectory(Paths.get(basePath + AppConstants.DISPUTED_PATH).toAbsolutePath(), ".txt");
 		CustomTokenProcessor customTokenProcessor = new CustomTokenProcessor();
-		List<String> authorNamesList = Arrays.asList("Hamilton","Jay","Madison");
+		List<String> authorNamesList = Arrays.asList("Hamilton", "Jay", "Madison");
 		for (Document d : corpus.getDocuments()) {
-			double[] maxDoubleArr =new double[1]; 
-			maxDoubleArr[0]=Double.NEGATIVE_INFINITY;
-			int[] finalClassId=new int[1];
-			finalClassId[0]=1;
+			double[] maxDoubleArr = new double[1];
+			maxDoubleArr[0] = Double.NEGATIVE_INFINITY;
+			int[] finalClassId = new int[1];
+			finalClassId[0] = 1;
 			Set<String> docTermSet = new HashSet<>();
 			EnglishTokenStream es = new EnglishTokenStream(d.getContent());
 			for (String token : es.getTokens()) {
 				docTermSet.addAll(customTokenProcessor.processToken(token));
 			}
 			classifyDisputedDoc(docTermSet, probMap, hamDiskPositionalIndex, hamCount, maxDoubleArr, 1, finalClassId);
-			
+
 			classifyDisputedDoc(docTermSet, probMap, jayDiskPositionalIndex, jayCount, maxDoubleArr, 2, finalClassId);
 			classifyDisputedDoc(docTermSet, probMap, madDiskPositionalIndex, madCount, maxDoubleArr, 3, finalClassId);
-			System.out.println("Doc Name: "+d.getTitle()+" belongs to author "+authorNamesList.get(finalClassId[0]-1));
+			System.out.println(
+					"Doc Name: " + d.getTitle() + " belongs to author " + authorNamesList.get(finalClassId[0] - 1));
 		}
 
 	}
 
 	private void classifyDisputedDoc(Set<String> disputedDocTerms, Map<Integer, Map<String, Double>> probMap,
-			DiskPositionalIndex hamDiskPositionalIndex2, double classCorpusCount, double[] max, int classId, int[] finalClassId) {
+			DiskPositionalIndex hamDiskPositionalIndex2, double classCorpusCount, double[] max, int classId,
+			int[] finalClassId) {
 		Map<String, Double> classProbMap = probMap.get(classId);
-		
+
 		// log(p(c))
 		double probInClass = Math.log10(classCorpusCount / totalCount);
 		double temp = 0;
-		
-		for(String t:disputedDocTerms) {
-			if(classProbMap.containsKey(t)) {
-				temp+= Math.log10(classProbMap.get(t));
+
+		for (String t : disputedDocTerms) {
+			if (classProbMap.containsKey(t)) {
+				temp += Math.log10(classProbMap.get(t));
 			}
 		}
-		probInClass+=temp;
+		probInClass += temp;
 //		max = Math.max(max, probInClass);
-		
-		if(max[0] <probInClass) {
-			max [0]= probInClass;
+
+		if (max[0] < probInClass) {
+			max[0] = probInClass;
 			finalClassId[0] = classId;
 		}
 	}
@@ -228,7 +252,8 @@ public class DocumentClassification {
 		System.out.println("==============================================");
 		System.out.println("=== Top 10 terms by I(C, T) ===");
 		for (i = 0; i < 10; i++) {
-			System.out.println("Term: "+tempTopMiList.get(i).getTerm()+" ==> Score: "+tempTopMiList.get(i).getIct());
+			System.out.println(
+					"Term: " + tempTopMiList.get(i).getTerm() + " ==> Score: " + tempTopMiList.get(i).getIct());
 		}
 		System.out.println("==============================================");
 		return discVocabList;
@@ -258,6 +283,95 @@ public class DocumentClassification {
 				System.out.println(e.getMessage());
 			}
 		}
+	}
+
+	public void rocchioClassification() throws IOException {
+		ArrayList<Double> jayVector = getCentroid(jayDiskPositionalIndex, jayVocabList, jayCount);
+		ArrayList<Double> hamVector = getCentroid(hamDiskPositionalIndex, hamVocabList, hamCount);
+		ArrayList<Double> madVector = getCentroid(madDiskPositionalIndex, madVocabList, madCount);
+
+		for (Integer disputedDocID : this.disputedDocIds) {
+			ArrayList<Double> disputedDocVector = new ArrayList<Double>(
+					Collections.nCopies(this.sortedCompList.size(), 0.0));
+			for (String term : disputedVocabList) {
+				double LD = 0;
+				double sumOFWDT = 0;
+				for (PositionalIndexPosting dp : disputeDiskPositionalIndex.getPositionIndexPostings(term)) {
+					if (dp.getDocumentId() == disputedDocID) {
+						LD = disputeDiskPositionalIndex.getDocWeight(disputedDocID);
+						sumOFWDT += dp.getWdt() / LD;
+						disputedDocVector.set(sortedCompList.indexOf(term), sumOFWDT);
+						break;
+					}
+
+				}
+
+			}
+			if (disputedDocID == 4) {
+				for (int i = 0; i < 20; i++) {
+					System.out.println("=======");
+					System.out.println(disputedDocVector.get(i));
+					System.out.println("=======");
+				}
+			}
+			double hamEucledianDistance = getEucledianDistance(hamVector, disputedDocVector);
+			double madEucledianDistance = getEucledianDistance(madVector, disputedDocVector);
+			double jayEucledianDistance = getEucledianDistance(jayVector, disputedDocVector);
+			System.out.println(
+					"Dist to hamilton for doc: " + disputedDocNames.get(disputedDocID) + " is " + hamEucledianDistance);
+			System.out.println(
+					"Dist to madison for doc: " + disputedDocNames.get(disputedDocID) + " is " + madEucledianDistance);
+			System.out.println(
+					"Dist to jay for doc: " + disputedDocNames.get(disputedDocID) + " is " + jayEucledianDistance);
+			findMinDistance(hamEucledianDistance, madEucledianDistance, jayEucledianDistance);
+		}
+
+	}
+
+	private void findMinDistance(double hamEucledianDistance, double madEucledianDistance,
+			double jayEucledianDistance) {
+		String s = "";
+		if (hamEucledianDistance < jayEucledianDistance && hamEucledianDistance < madEucledianDistance) {
+			// ham
+			s = "/hamilton";
+		} else if (jayEucledianDistance < madEucledianDistance) {
+			// jay
+			s = "/jay";
+		} else {
+			// mad
+			s = "/madison";
+		}
+		System.out.println("Low distance for paper is: " + s);
+
+	}
+
+	public double getEucledianDistance(ArrayList<Double> p1, ArrayList<Double> p2) {
+		double distance = 0;
+		for (int i = 0; i < p1.size(); i++) {
+			distance += Math.pow(p1.get(i) - p2.get(i), 2);
+		}
+		return Math.sqrt(distance);
+	}
+
+	public ArrayList<Double> getCentroid(DiskPositionalIndex dpi, Set<String> termsSet, double docsCount)
+			throws IOException {
+		ArrayList<Double> vector = new ArrayList<Double>(Collections.nCopies(this.sortedCompList.size(), 0.0));
+		double LD = 0;
+		double sumOFWDT = 0;
+		for (String term : termsSet) {
+			LD = 0.0;
+			sumOFWDT = 0.0;
+			for (PositionalIndexPosting pi : dpi.getPositionIndexPostings(term)) {
+				LD = dpi.getDocWeight(pi.getDocumentId());
+				sumOFWDT += pi.getWdt() / (LD);
+
+			}
+			int index = this.sortedCompList.indexOf(term);
+			vector.set(index, sumOFWDT / docsCount);
+		}
+
+		return vector;
+
 	}
 
 }
