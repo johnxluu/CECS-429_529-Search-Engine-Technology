@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import cecs429.algorithms.DiskIndexingAlgorithm;
+//import cecs429.algorithms.DiskIndexingAlgorithm;
 import cecs429.classification.DocumentClassification;
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
@@ -33,7 +33,7 @@ import cecs429.utils.AppUtils;
 
 public class TermDocumentIndexer {
 	private DiskPositionalIndex diskPositionalIndex;
-	private DiskIndexingAlgorithm diskIndexingAlgorithm;
+//	private DiskIndexingAlgorithm diskIndexingAlgorithm;
 	private DocumentClassification documentClassification;
 	
 	
@@ -62,15 +62,19 @@ public class TermDocumentIndexer {
 		System.out.println("1. Bayesian");
 		System.out.println("2. Rocchio");
 		String op = sc.nextLine();
+		documentClassification = new DocumentClassification();
+		int option=0;
 		if(op.equalsIgnoreCase("1")) {
-			documentClassification = new DocumentClassification();
-			try {
-				documentClassification.startDiskIndexing();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		} else if(op.equalsIgnoreCase("2")) {
+			option=1;
 			
+		} else if(op.equalsIgnoreCase("2")) {
+			option=2;
+		}
+		try {
+			documentClassification.startDiskIndexing(option);
+		}
+		catch(Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 
