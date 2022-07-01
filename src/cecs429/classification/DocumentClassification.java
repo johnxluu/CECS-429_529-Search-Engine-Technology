@@ -15,6 +15,7 @@ import java.util.Scanner;
 import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.junit.experimental.results.PrintableResult;
 
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
@@ -57,9 +58,11 @@ public class DocumentClassification {
 	List<String> jayDocNames;
 	List<Integer> madDocIds;
 	List<String> madDocNames;
-
+	private int[] kNNCounter;
+	List<String> classNamesList;
 
 	public void startDiskIndexing(int option) throws IOException {
+		classNamesList = Arrays.asList("Hamilton","Jay","Madison");
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter Corpus Directory");
 		basePath = sc.nextLine();
@@ -175,12 +178,14 @@ public class DocumentClassification {
 		prepareTermProbabilityMap(discVocabList, jayDiskPositionalIndex, probMap, 2);
 		prepareTermProbabilityMap(discVocabList, madDiskPositionalIndex, probMap, 3);
 
+		
 		DocumentCorpus corpus = DirectoryCorpus
 				.loadTextDirectory(Paths.get(basePath + AppConstants.DISPUTED_PATH).toAbsolutePath(), ".txt");
 		CustomTokenProcessor customTokenProcessor = new CustomTokenProcessor();
 		List<String> authorNamesList = Arrays.asList("Hamilton", "Jay", "Madison");
 		for (Document d : corpus.getDocuments()) {
 			double[] maxDoubleArr = new double[1];
+//			maxDoubleArr[0] = Double.MIN_VALUE;
 			maxDoubleArr[0] = Double.NEGATIVE_INFINITY;
 			int[] finalClassId = new int[1];
 			finalClassId[0] = 1;
@@ -189,19 +194,20 @@ public class DocumentClassification {
 			for (String token : es.getTokens()) {
 				docTermSet.addAll(customTokenProcessor.processToken(token));
 			}
-			classifyDisputedDoc(docTermSet, probMap, hamDiskPositionalIndex, hamCount, maxDoubleArr, 1, finalClassId);
+			System.out.println("=================================================");
+			classifyDisputedDoc(docTermSet, probMap, hamDiskPositionalIndex, hamCount, maxDoubleArr, 1, finalClassId,d.getTitle());
 
-			classifyDisputedDoc(docTermSet, probMap, jayDiskPositionalIndex, jayCount, maxDoubleArr, 2, finalClassId);
-			classifyDisputedDoc(docTermSet, probMap, madDiskPositionalIndex, madCount, maxDoubleArr, 3, finalClassId);
+			classifyDisputedDoc(docTermSet, probMap, jayDiskPositionalIndex, jayCount, maxDoubleArr, 2, finalClassId,d.getTitle());
+			classifyDisputedDoc(docTermSet, probMap, madDiskPositionalIndex, madCount, maxDoubleArr, 3, finalClassId,d.getTitle());
 			System.out.println(
-					"Doc Name: " + d.getTitle() + " belongs to author " + authorNamesList.get(finalClassId[0] - 1));
+					"So, the Doc Name: " + d.getTitle() + " belongs to author " + authorNamesList.get(finalClassId[0] - 1));
 		}
 
 	}
 
 	private void classifyDisputedDoc(Set<String> disputedDocTerms, Map<Integer, Map<String, Double>> probMap,
 			DiskPositionalIndex hamDiskPositionalIndex2, double classCorpusCount, double[] max, int classId,
-			int[] finalClassId) {
+			int[] finalClassId, String disputedDocName) {
 		Map<String, Double> classProbMap = probMap.get(classId);
 
 		// log(p(c))
@@ -215,7 +221,7 @@ public class DocumentClassification {
 		}
 		probInClass += temp;
 //		max = Math.max(max, probInClass);
-
+		System.out.println("Probability that doc: << "+disputedDocName+" >> belongs to /"+classNamesList.get(classId-1)+" is: "+Math.pow(10, probInClass));
 		if (max[0] < probInClass) {
 			max[0] = probInClass;
 			finalClassId[0] = classId;
@@ -413,10 +419,11 @@ public class DocumentClassification {
 	public void knn(int k) throws IOException {
 		ArrayList<ArrayList<Double>> allVectors = new ArrayList<ArrayList<Double>>();
 		ArrayList<String> fileNames = new ArrayList<String>();
-
+		System.out.println("Preparing Hamilton Vector...");
 		allVectors.addAll(addVector(hamDocIds, hamDiskPositionalIndex, hamVocabList, fileNames, hamDocNames));
-
+		System.out.println("Preparing Jay Vector...");
 		allVectors.addAll(addVector(jayDocIds, jayDiskPositionalIndex, jayVocabList, fileNames, jayDocNames));
+		System.out.println("Preparing Madison Vector...");
 		allVectors.addAll(addVector(madDocIds, madDiskPositionalIndex, madVocabList, fileNames, madDocNames));
 
 		ArrayList<ArrayList<Double>> allDisputedList = addVector(disputedDocIds, disputeDiskPositionalIndex,
@@ -443,14 +450,72 @@ public class DocumentClassification {
 					}
 				}
 			}
+			System.out.println(" ");
 			System.out.println("==================");
 			System.out.println(disputedDocNames.get(index));
-			for (int i = 0; i < k; i++) {
-				System.out.println(distances.get(i) + "    " + fileNamesCopy.get(i));
-			}
+			
+			checkForATie(k, distances, fileNamesCopy,disputedDocNames.get(index));
 			index++;
 		}
 
+	}
+
+	private void checkForATie(int k, ArrayList<Double> distances, ArrayList<String> fileNamesCopy, String disputedDocName) {
+		kNNCounter = new int[3];
+		for (int i = 0; i < k; i++) {
+			updateKnnCounter(fileNamesCopy, i);
+			
+			System.out.println(distances.get(i) + "    " + fileNamesCopy.get(i));
+		}
+		int max = -1;
+		boolean isTie = false;
+		int maxIndex = -1;
+		for(int i=0;i<kNNCounter.length;i++) {
+			if(kNNCounter[i]>max) {
+				max = kNNCounter[i];
+				maxIndex=i;
+				isTie = false;
+			} else if(kNNCounter[i] == max) {
+				isTie=true;
+			}
+		}
+		if(isTie) {
+			System.out.println(" ");
+			System.out.println("xxxxxxxxxxxx===========xxxxxxxxxxx");
+			System.out.println("Tie occured for k = "+k);
+			System.out.println("Intiating Tie breaking for the doc: "+disputedDocName+" with k = "+(k+1));
+			System.out.println("xxxxxxxxxxxx===========xxxxxxxxxxx");
+			System.out.println(" ");
+			checkForATie(k+1, distances, fileNamesCopy,disputedDocName);
+		} else {
+			printResult(maxIndex,disputedDocName);
+		}
+	}
+
+	private void printResult(int maxIndex, String disputedDocName) {
+		switch (maxIndex) {
+		case 0:
+			System.out.println("Document "+disputedDocName+" belongs to /hamilton");
+			break;
+		case 1:
+			System.out.println("Document "+disputedDocName+" belongs to /jay");
+			break;
+		case 2:
+			System.out.println("Document "+disputedDocName+" belongs to /madison");
+			break;
+		default:
+			break;
+		}
+	}
+
+	private void updateKnnCounter(ArrayList<String> fileNamesCopy, int i) {
+		if(hamDocNames.contains(fileNamesCopy.get(i))){
+			kNNCounter[0]+=1;
+		} else if(jayDocNames.contains(fileNamesCopy.get(i))){
+			kNNCounter[1]+=1;
+		}else if(madDocNames.contains(fileNamesCopy.get(i))){
+			kNNCounter[2]+=1;
+		}
 	}
 
 	public ArrayList<ArrayList<Double>> addVector(List<Integer> docIDs, DiskPositionalIndex dpi, Set<String> termSet,
